@@ -2,7 +2,9 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.sql.Timestamp;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
@@ -21,7 +23,8 @@ public class Product {
 
     private String name;
     private String description;
-    private String piece;
+    private Integer piece;
+    private BigDecimal price;
     private String image;
     private String category;
     private String color;

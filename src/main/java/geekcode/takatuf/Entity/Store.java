@@ -2,8 +2,8 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.sql.Timestamp;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "stores")
