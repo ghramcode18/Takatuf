@@ -32,7 +32,7 @@ public class User {
     private String type;
 
     @Column(name = "created_at")
-    private Timestamp createdAt;
+    private LocalDateTime createdAt;
 
     // One-to-One with Profile
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)

@@ -17,12 +17,15 @@ import java.sql.Timestamp;
 
 public class Profile {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String phone;
     private String address;
     private String paymentInfo;
     private Boolean isActive;
     private Boolean isDeleted;
-    private Timestamp createdAt;
+    private LocalDateTime createdAt;
 
     @OneToOne
     @MapsId

@@ -19,9 +19,11 @@ public class Promotion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private BigDecimal discountPercentage;
-    private Date startDate;
-    private Date endDate;
+
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 
     @ManyToOne
     @JoinColumn(name = "store_id", insertable = false, updatable = false)

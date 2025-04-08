@@ -18,8 +18,9 @@ public class BannedUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
     private String reason;
-    private Timestamp bannedAt;
+    private LocalDateTime bannedAt;
 
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
