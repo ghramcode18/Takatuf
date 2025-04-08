@@ -2,8 +2,6 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.Set;
-import java.util.UUID;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -23,8 +21,13 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String name;
+
+    @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(nullable = false)
     private String password;
     private String type;
 

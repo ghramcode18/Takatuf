@@ -1,12 +1,8 @@
 package geekcode.takatuf.Entity;
 
-import java.sql.Date;
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.Set;
-import java.util.UUID;
 import java.sql.Timestamp;
-import java.util.List;
 
 @Entity
 @Table(name = "banned_users")
