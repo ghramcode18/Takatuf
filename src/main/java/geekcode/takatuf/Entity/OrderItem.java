@@ -20,11 +20,15 @@ public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long productId;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id", insertable = false, updatable = false)
+    private Product productId;
+
     private Integer quantity;
     private BigDecimal price;
     private String address;
-    private Timestamp orderDate;
+    private LocalDateTime orderDate;
     private String status;
 
     @ManyToOne

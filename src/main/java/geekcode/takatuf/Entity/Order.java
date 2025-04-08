@@ -21,13 +21,16 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long storeId;
+    @ManyToOne
+    @JoinColumn(name = "store_id")
+    private Store storeId;
+
     private String status;
     private BigDecimal totalPrice;
     private String paymentMethod;
     private String trackingInfo;
     private String orderType;
-    private Timestamp createdAt;
+    private LocalDateTime createdAt;
 
     @ManyToOne
     @JoinColumn(name = "buyer_id")

@@ -19,9 +19,10 @@ public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
     private String type;
     private String message;
-    private Timestamp timestamp;
+    private LocalDateTime timestamp;
 
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
