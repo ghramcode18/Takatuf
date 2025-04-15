@@ -2,8 +2,8 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.sql.Timestamp;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -37,6 +37,15 @@ public class User {
     // One-to-One with Profile
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Profile profile;
+    // One-to-Many with user_roles
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserRole> userRoles;
+
+    @OneToMany(mappedBy = "user1")
+    private List<Chat> chatsInitiated;
+
+    @OneToMany(mappedBy = "user2")
+    private List<Chat> chatsReceived;
 
     // One-to-Many with Orders (as buyer)
     @OneToMany(mappedBy = "user")

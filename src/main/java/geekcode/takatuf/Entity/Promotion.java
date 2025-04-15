@@ -1,6 +1,5 @@
 package geekcode.takatuf.Entity;
-
-import java.sql.Date;
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;

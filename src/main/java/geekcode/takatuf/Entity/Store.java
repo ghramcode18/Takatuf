@@ -2,8 +2,8 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.sql.Timestamp;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "stores")
@@ -28,6 +28,9 @@ public class Store {
     private String description;
     private String status;
     private LocalDateTime createdAt;
+    @ManyToOne
+    @JoinColumn(name = "owner_id", insertable = false, updatable = false)
+    private User owner;
 
     @OneToMany(mappedBy = "store")
     private List<Product> products;
