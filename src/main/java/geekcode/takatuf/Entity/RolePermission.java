@@ -22,6 +22,4 @@ public class RolePermission {
     @ManyToOne
     @JoinColumn(name = "permission_id", nullable = false)
     private Permission permission;
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
-    private Order order;
 }

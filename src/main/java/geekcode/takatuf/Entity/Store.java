@@ -28,6 +28,9 @@ public class Store {
     private String description;
     private String status;
     private LocalDateTime createdAt;
+    @ManyToOne
+    @JoinColumn(name = "owner_id", insertable = false, updatable = false)
+    private User owner;
 
     @OneToMany(mappedBy = "store")
     private List<Product> products;

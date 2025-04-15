@@ -17,7 +17,7 @@ public class Permission {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String descrition;
+    private String description;
 
     @OneToMany(mappedBy = "permission", cascade = CascadeType.ALL)
     private List<RolePermission> rolePermissions;

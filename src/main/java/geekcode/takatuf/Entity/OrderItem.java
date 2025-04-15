@@ -21,8 +21,8 @@ public class OrderItem {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "product_id", insertable = false, updatable = false)
-    private Product productId;
+    @JoinColumn(name = "product_id")
+    private Product product;
 
     private Integer quantity;
     private BigDecimal price;
