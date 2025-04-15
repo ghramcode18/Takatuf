@@ -20,14 +20,14 @@ public class Review {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "product_id", insertable = false, updatable = false)
-    private Long productId;
-    
+    @JoinColumn(name = "product_id")
+    private Product product;
+
     private Integer rating;
     private String comment;
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 }

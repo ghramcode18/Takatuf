@@ -39,6 +39,4 @@ public class Order {
     @OneToMany(mappedBy = "order")
     private List<OrderItem> orderItems;
 
-    @OneToOne(mappedBy = "Role_Permission", cascade = CascadeType.ALL)
-    private RolePermission rolePermission;
 }
