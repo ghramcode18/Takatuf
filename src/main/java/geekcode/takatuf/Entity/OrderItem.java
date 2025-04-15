@@ -3,8 +3,7 @@ package geekcode.takatuf.Entity;
 import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "order_items")
@@ -22,8 +21,8 @@ public class OrderItem {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "product_id", insertable = false, updatable = false)
-    private Product productId;
+    @JoinColumn(name = "product_id")
+    private Product product;
 
     private Integer quantity;
     private BigDecimal price;

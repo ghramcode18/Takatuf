@@ -3,8 +3,8 @@ package geekcode.takatuf.Entity;
 import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
-import java.sql.Timestamp;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "orders")
@@ -38,4 +38,5 @@ public class Order {
 
     @OneToMany(mappedBy = "order")
     private List<OrderItem> orderItems;
+
 }

@@ -1,8 +1,9 @@
 package geekcode.takatuf.Entity;
 
-import java.sql.Date;
+
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "subscriptions")
@@ -18,7 +19,7 @@ public class Subscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String type;
     private LocalDateTime startDate;
     private LocalDateTime endDate;

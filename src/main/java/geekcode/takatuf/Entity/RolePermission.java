@@ -2,27 +2,24 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "banned_users")
+@Table(name = "role_permissions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+public class RolePermission {
 
-@Setter
-@Getter
-
-public class BannedUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String reason;
-    private LocalDateTime bannedAt;
+    @ManyToOne
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "permission_id", nullable = false)
+    private Permission permission;
 }
