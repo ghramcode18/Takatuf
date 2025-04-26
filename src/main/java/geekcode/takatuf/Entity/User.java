@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
 import java.time.LocalDateTime;
+import geekcode.takatuf.Enums.UserType;
 
 @Entity
 @Table(name = "users")
@@ -29,7 +30,10 @@ public class User {
 
     @Column(nullable = false)
     private String password;
-    private String type;
+    @Column(nullable = false)
+    private String phoneNumber;
+    @Enumerated(EnumType.STRING) // Store as enum value
+    private UserType type;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
