@@ -1,8 +1,5 @@
 package geekcode.takatuf.Service;
 
-import geekcode.takatuf.dto.auth.LoginRequest;
-import geekcode.takatuf.dto.auth.AuthResponse;
-import geekcode.takatuf.dto.auth.RegisterRequest;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Entity.UserRole;
 import geekcode.takatuf.Entity.OTPInfo;
@@ -12,6 +9,10 @@ import geekcode.takatuf.Repository.RoleRepository;
 import geekcode.takatuf.Repository.UserRoleRepository;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Security.JwtService;
+import geekcode.takatuf.dto.auth.AuthResponse;
+import geekcode.takatuf.dto.auth.LoginRequest;
+import geekcode.takatuf.dto.auth.RegisterRequest;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
@@ -45,6 +46,7 @@ public class AuthService {
         if (userRepository.existsByName(request.getName())) {
             throw new BadRequestException("User name already registered");
         }
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
@@ -68,7 +70,8 @@ public class AuthService {
             userRoleRepository.save(userRole);
         }
 
-        String token = jwtService.generateToken(user);
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
 
         return AuthResponse.builder()
                 .id(user.getId())
@@ -76,8 +79,9 @@ public class AuthService {
                 .email(user.getEmail())
                 .type(user.getType().name())
                 .role(request.getRole() != null ? request.getRole().name() : null)
-                .token(token)
-                .message("Registerd Seccessfully ")
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .message("Registered Successfully")
                 .build();
     }
 
@@ -90,17 +94,18 @@ public class AuthService {
             throw new BadRequestException("Invalid credentials");
         }
 
-        String token = jwtService.generateToken(user);
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
 
         return AuthResponse.builder()
-
-                .name(user.getName())
                 .id(user.getId())
-                .type(user.getType().name())
+                .name(user.getName())
                 .email(user.getEmail())
-                .role(user.getUserRoles().get(0).getRole().getRoleName().name())
-                .message("Login Seccessfully ")
-                .token(token)
+                .type(user.getType().name())
+                .role(user.getUserRoles().isEmpty() ? null : user.getUserRoles().get(0).getRole().getRoleName().name())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .message("Login Successfully")
                 .build();
     }
 
@@ -164,4 +169,29 @@ public class AuthService {
         message.setText("Your OTP code is: " + otp);
         mailSender.send(message);
     }
+
+    public AuthResponse refreshToken(String refreshToken) {
+        String email = jwtService.extractUsername(refreshToken);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("Invalid refresh token"));
+
+        if (!jwtService.isTokenValid(refreshToken)) {
+            throw new BadRequestException("Invalid refresh token");
+        }
+
+        String newAccessToken = jwtService.generateAccessToken(user);
+
+        return AuthResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .type(user.getType().name())
+                .role(user.getUserRoles().isEmpty() ? null : user.getUserRoles().get(0).getRole().getRoleName().name())
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .message("Access token refreshed successfully")
+                .build();
+    }
+
 }

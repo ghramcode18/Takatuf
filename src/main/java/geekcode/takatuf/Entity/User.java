@@ -3,6 +3,10 @@ package geekcode.takatuf.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import java.time.LocalDateTime;
 import geekcode.takatuf.Enums.UserType;
 
@@ -29,6 +33,7 @@ public class User {
     private String email;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
     @Column(nullable = false)
     private String phoneNumber;
@@ -38,11 +43,15 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     // One-to-One with Profile
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Profile profile;
     // One-to-Many with user_roles
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+
     private List<UserRole> userRoles;
 
     @OneToMany(mappedBy = "user1")

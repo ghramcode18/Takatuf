@@ -1,15 +1,16 @@
 package geekcode.takatuf.Controller;
 
-import geekcode.takatuf.dto.auth.RegisterRequest;
-import geekcode.takatuf.dto.auth.ResetPasswordRequest;
-import geekcode.takatuf.dto.auth.LoginRequest;
 import geekcode.takatuf.Service.AuthService;
 import geekcode.takatuf.dto.auth.AuthResponse;
 import geekcode.takatuf.dto.auth.EmailRequest;
+import geekcode.takatuf.dto.auth.LoginRequest;
+import geekcode.takatuf.dto.auth.OtpVerificationRequest;
+import geekcode.takatuf.dto.auth.RefreshTokenRequest;
+import geekcode.takatuf.dto.auth.RegisterRequest;
+import geekcode.takatuf.dto.auth.ResetPasswordRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import geekcode.takatuf.dto.auth.OtpVerificationRequest;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -52,6 +53,12 @@ public class AuthController {
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.getEmail(), request.getNewPassword());
         return ResponseEntity.ok("Password reset successfully.");
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(response);
     }
 
 }
