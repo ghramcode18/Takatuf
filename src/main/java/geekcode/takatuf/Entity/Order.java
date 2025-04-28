@@ -37,6 +37,7 @@ public class Order {
     private User user;
 
     @OneToMany(mappedBy = "order")
+    
     private List<OrderItem> orderItems;
 
 }
