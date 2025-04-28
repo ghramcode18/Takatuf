@@ -1,9 +1,7 @@
 package geekcode.takatuf.Service;
 
-import geekcode.takatuf.Entity.User;
-import geekcode.takatuf.Entity.UserRole;
-import geekcode.takatuf.Entity.OTPInfo;
-import geekcode.takatuf.Entity.Role;
+import geekcode.takatuf.Entity.*;
+import geekcode.takatuf.Repository.ProfileRepository;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Repository.RoleRepository;
 import geekcode.takatuf.Repository.UserRoleRepository;
@@ -15,10 +13,10 @@ import geekcode.takatuf.dto.auth.RegisterRequest;
 
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Random;
+import java.security.PrivateKey;
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
-import java.util.Map;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -39,7 +37,9 @@ public class AuthService {
     private final JwtService jwtService;
     private final JavaMailSender mailSender;
 
-    public AuthResponse register(RegisterRequest request) {
+    private final ProfileRepository profileRepository;
+
+    public void register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already registered");
         }
@@ -47,16 +47,26 @@ public class AuthService {
             throw new BadRequestException("User name already registered");
         }
 
+        Profile profile = Profile.builder()
+                .isActive(true)
+                .isDeleted(false)
+                .phone(request.getPhoneNumber())
+                .createdAt(LocalDateTime.now())
+                .build();
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .phoneNumber(request.getPhoneNumber())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .type(request.getType())
+                .profile(profile)
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        profile.setUser(user);
         userRepository.save(user);
+
 
         if (request.getRole() != null) {
             Role role = roleRepository.findByRoleName(request.getRole())
@@ -70,20 +80,11 @@ public class AuthService {
             userRoleRepository.save(userRole);
         }
 
+        // إنشاء التوكنات
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-
-        return AuthResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .type(user.getType().name())
-                .role(request.getRole() != null ? request.getRole().name() : null)
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .message("Registered Successfully")
-                .build();
     }
+
 
     public AuthResponse authenticate(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
@@ -98,19 +99,23 @@ public class AuthService {
         String refreshToken = jwtService.generateRefreshToken(user);
 
         return AuthResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .type(user.getType().name())
-                .role(user.getUserRoles().isEmpty() ? null : user.getUserRoles().get(0).getRole().getRoleName().name())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .message("Login Successfully")
                 .build();
     }
 
-    public void logout(String token) {
-        System.out.println("Logging out the user. Token invalidated: " + token);
+    public void logout(String email) {
+
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new BadRequestException("User not found");
+        }
+        User user = userOptional.get();
+        Profile profile = user.getProfile();
+        if (profile != null) {
+            profile.setIsActive(false);
+        }
+        userRepository.save(user);
     }
 
     private final Map<String, OTPInfo> otpStorage = new HashMap<>();
@@ -183,14 +188,7 @@ public class AuthService {
         String newAccessToken = jwtService.generateAccessToken(user);
 
         return AuthResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .type(user.getType().name())
-                .role(user.getUserRoles().isEmpty() ? null : user.getUserRoles().get(0).getRole().getRoleName().name())
                 .accessToken(newAccessToken)
-                .refreshToken(refreshToken)
-                .message("Access token refreshed successfully")
                 .build();
     }
 
