@@ -33,5 +33,6 @@ public class Store {
     private User owner;
 
     @OneToMany(mappedBy = "store")
+    
     private List<Product> products;
 }
