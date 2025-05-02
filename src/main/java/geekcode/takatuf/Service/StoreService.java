@@ -10,7 +10,7 @@ import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import java.util.List;
 import java.time.LocalDateTime;
 
 @Service
@@ -93,6 +93,13 @@ public class StoreService {
         }
 
         storeRepository.delete(store);
+    }
+
+    public List<StoreResponse> getAllStores() {
+        List<Store> stores = storeRepository.findAll();
+        return stores.stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
 }
