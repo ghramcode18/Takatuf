@@ -114,6 +114,7 @@ public class AuthService {
     }
 
     private final Map<String, OTPInfo> otpStorage = new HashMap<>();
+    private final Map<String, String> otpToEmailMap = new HashMap<>();
 
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
@@ -121,11 +122,18 @@ public class AuthService {
 
         String otp = generateOtp();
         otpStorage.put(email, new OTPInfo(otp, LocalDateTime.now(), false));
+        otpToEmailMap.put(otp, email);
 
         sendOtpEmail(email, otp);
     }
 
-    public void verifyOtp(String email, String otp) {
+    public void verifyOtp(String otp) {
+        String email = otpToEmailMap.get(otp);
+
+        if (email == null) {
+            throw new BadRequestException("Invalid OTP");
+        }
+
         OTPInfo otpInfo = otpStorage.get(email);
 
         if (otpInfo == null || !otpInfo.getOtp().equals(otp)) {
@@ -134,13 +142,20 @@ public class AuthService {
 
         if (otpInfo.getCreatedAt().plusMinutes(10).isBefore(LocalDateTime.now())) {
             otpStorage.remove(email);
+            otpToEmailMap.remove(otp);
             throw new BadRequestException("OTP expired");
         }
 
         otpInfo.setVerified(true);
     }
 
-    public void resetPassword(String email, String newPassword) {
+    public void resetPassword(String otp, String newPassword) {
+        String email = otpToEmailMap.get(otp);
+
+        if (email == null) {
+            throw new BadRequestException("Invalid OTP");
+        }
+
         OTPInfo otpInfo = otpStorage.get(email);
 
         if (otpInfo == null || !otpInfo.isVerified()) {
@@ -154,6 +169,7 @@ public class AuthService {
         userRepository.save(user);
 
         otpStorage.remove(email);
+        otpToEmailMap.remove(otp);
     }
 
     private String generateOtp() {
