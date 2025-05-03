@@ -1,7 +1,5 @@
 package geekcode.takatuf.Security;
 
-import geekcode.takatuf.Security.CustomUserDetailsService;
-import geekcode.takatuf.Security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
