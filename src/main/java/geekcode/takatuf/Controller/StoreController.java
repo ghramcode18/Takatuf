@@ -2,7 +2,7 @@ package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
-import geekcode.takatuf.Entity.Store;
+
 import geekcode.takatuf.Service.StoreService;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;

@@ -19,8 +19,8 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 15; // 15 دقيقة
-    private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7 أيام
+    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 15; // 15 minute
+    private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7 days
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
@@ -75,16 +75,14 @@ public class JwtService {
                 .compact();
     }
 
-   // تعديل طريقة isTokenValid في JwtService
-public boolean isTokenValid(String token) {
-    try {
-        // تحقق من صلاحية التوكن فقط
-        Claims claims = extractAllClaims(token);
-        return !isTokenExpired(token);
-    } catch (JwtException e) {
-        throw new BadRequestException("Invalid or expired JWT token");
+    public boolean isTokenValid(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return !isTokenExpired(token);
+        } catch (JwtException e) {
+            throw new BadRequestException("Invalid or expired JWT token");
+        }
     }
-}
 
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
