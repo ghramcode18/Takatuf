@@ -115,7 +115,7 @@ public class AuthService {
 
     private final Map<String, OTPInfo> otpStorage = new HashMap<>();
     private final Map<String, String> otpToEmailMap = new HashMap<>();
-
+    private String lastVerifiedEmail;
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException("Email not found"));
@@ -147,29 +147,29 @@ public class AuthService {
         }
 
         otpInfo.setVerified(true);
+        lastVerifiedEmail = email;
     }
 
-    public void resetPassword(String otp, String newPassword) {
-        String email = otpToEmailMap.get(otp);
-
-        if (email == null) {
-            throw new BadRequestException("Invalid OTP");
+    public void resetPassword(String newPassword) {
+        if (lastVerifiedEmail == null) {
+            throw new BadRequestException("OTP verification required");
         }
-
-        OTPInfo otpInfo = otpStorage.get(email);
-
+    
+        OTPInfo otpInfo = otpStorage.get(lastVerifiedEmail);
+    
         if (otpInfo == null || !otpInfo.isVerified()) {
             throw new BadRequestException("OTP verification required");
         }
-
-        User user = userRepository.findByEmail(email)
+    
+        User user = userRepository.findByEmail(lastVerifiedEmail)
                 .orElseThrow(() -> new BadRequestException("Email not found"));
-
+    
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-
-        otpStorage.remove(email);
-        otpToEmailMap.remove(otp);
+    
+        otpStorage.remove(lastVerifiedEmail);
+        otpToEmailMap.values().removeIf(e -> e.equals(lastVerifiedEmail));
+        lastVerifiedEmail = null;
     }
 
     private String generateOtp() {
