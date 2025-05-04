@@ -44,15 +44,15 @@ public class AuthController {
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<String> verifyOtp(@RequestBody OtpVerificationRequest request) {
+    public ResponseEntity<?> verifyOtp(@RequestBody OtpVerificationRequest request) {
         authService.verifyOtp(request.getOtp());
         return ResponseEntity.ok("OTP verified");
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
-        authService.resetPassword(request.getOtp(), request.getNewPassword());
-        return ResponseEntity.ok("Password reset successful");
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getNewPassword());
+        return ResponseEntity.ok("Password reset successfully");
     }
 
     @PostMapping("/refresh-token")
