@@ -33,7 +33,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtService.isTokenValid(token)) {
             String username = jwtService.extractUsername(token);
 
-            // قم بتحميل UserDetails باستخدام CustomUserDetailsService
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
             Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null,

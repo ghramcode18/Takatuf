@@ -78,10 +78,9 @@ public class JwtService {
                 .compact();
     }
 
-   // تعديل طريقة isTokenValid في JwtService
 public boolean isTokenValid(String token) {
     try {
-        // تحقق من صلاحية التوكن فقط
+
         Claims claims = extractAllClaims(token);
         return !isTokenExpired(token);
     } catch (JwtException e) {
