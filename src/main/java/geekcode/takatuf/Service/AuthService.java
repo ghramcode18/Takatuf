@@ -67,7 +67,6 @@ public class AuthService {
         profile.setUser(user);
         userRepository.save(user);
 
-
         if (request.getRole() != null) {
             Role role = roleRepository.findByRoleName(request.getRole())
                     .orElseThrow(() -> new BadRequestException("Invalid role"));
@@ -84,7 +83,6 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
     }
-
 
     public AuthResponse authenticate(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
@@ -119,6 +117,8 @@ public class AuthService {
     }
 
     private final Map<String, OTPInfo> otpStorage = new HashMap<>();
+    private final Map<String, String> otpToEmailMap = new HashMap<>();
+    private String lastVerifiedEmail;
 
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
@@ -130,7 +130,11 @@ public class AuthService {
         sendOtpEmail(email, otp);
     }
 
-    public void verifyOtp(String email, String otp) {
+    public void verifyOtp(String otp) {
+        String email = otpToEmailMap.get(otp);
+        if (email == null) {
+            throw new BadRequestException("Invalid OTP");
+        }
         OTPInfo otpInfo = otpStorage.get(email);
 
         if (otpInfo == null || !otpInfo.getOtp().equals(otp)) {
@@ -143,22 +147,29 @@ public class AuthService {
         }
 
         otpInfo.setVerified(true);
+        lastVerifiedEmail = email;
     }
 
-    public void resetPassword(String email, String newPassword) {
-        OTPInfo otpInfo = otpStorage.get(email);
+    public void resetPassword(String newPassword) {
+        if (lastVerifiedEmail == null) {
+            throw new BadRequestException("OTP verification required");
+        }
+
+        OTPInfo otpInfo = otpStorage.get(lastVerifiedEmail);
 
         if (otpInfo == null || !otpInfo.isVerified()) {
             throw new BadRequestException("OTP verification required");
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(lastVerifiedEmail)
                 .orElseThrow(() -> new BadRequestException("Email not found"));
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        otpStorage.remove(email);
+        otpStorage.remove(lastVerifiedEmail);
+        otpToEmailMap.values().removeIf(e -> e.equals(lastVerifiedEmail));
+        lastVerifiedEmail = null;
     }
 
     private String generateOtp() {
