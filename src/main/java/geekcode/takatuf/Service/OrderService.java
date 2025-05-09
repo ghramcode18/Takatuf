@@ -32,9 +32,12 @@ public class OrderService {
                 User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
-                Store store = storeRepository.findById(request.getStoreId())
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Store not found: " + request.getStoreId()));
+                if (request.getItems() == null || request.getItems().isEmpty()) {
+                        throw new ResourceNotFoundException("Order must contain at least one product");
+                }
+                Product firstProduct = productRepository.findById(request.getItems().get(0).getProductId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+                Store store = firstProduct.getStore();
 
                 BigDecimal totalPrice = request.getItems().stream()
                                 .map(item -> {
