@@ -91,4 +91,10 @@ public class JwtService {
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
+
+    public Long extractUserId(String token) {
+        Claims claims = extractAllClaims(token);
+        return Long.valueOf(claims.get("userId").toString());
+    }
+
 }
