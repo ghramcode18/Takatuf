@@ -3,7 +3,6 @@ package geekcode.takatuf.dto.order;
 import lombok.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import java.math.BigDecimal;
 import java.util.List;
 
 import geekcode.takatuf.Enums.OrderType;

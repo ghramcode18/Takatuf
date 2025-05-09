@@ -2,13 +2,15 @@ package geekcode.takatuf.Service;
 
 import geekcode.takatuf.Entity.*;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
+import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.*;
 import geekcode.takatuf.Enums.OrderStatus;
-import geekcode.takatuf.Enums.OrderType;
 import geekcode.takatuf.Enums.TrackingInfo;
 import geekcode.takatuf.dto.order.PlaceOrderRequest;
 import geekcode.takatuf.dto.order.OrderResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +24,6 @@ import java.util.stream.Collectors;
 public class OrderService {
 
         private final OrderRepository orderRepository;
-        private final StoreRepository storeRepository;
         private final ProductRepository productRepository;
         private final OrderItemRepository orderItemRepository;
         private final UserRepository userRepository;
@@ -104,7 +105,7 @@ public class OrderService {
                                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
                 if (!order.getUser().getId().equals(userId)) {
-                        throw new RuntimeException("Unauthorized to cancel this order");
+                        throw new UnauthorizedException("Unauthorized to cancel this order");
                 }
 
                 if (order.getStatus() != OrderStatus.PLACED) {
@@ -118,5 +119,40 @@ public class OrderService {
 
                 order.getOrderItems().forEach(item -> item.setStatus(OrderStatus.CANCELLED));
                 orderItemRepository.saveAll(order.getOrderItems());
+        }
+
+        public OrderResponse trackOrder(Long orderId) {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                String username = authentication.getName();
+
+                User user = userRepository.findByEmail(username)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+                if (!order.getUser().getId().equals(user.getId())) {
+                        throw new UnauthorizedException("Unauthorized to view this order");
+                }
+
+                return OrderResponse.builder()
+                                .orderId(order.getId())
+                                .status(order.getStatus())
+                                .trackingInfo(order.getTrackingInfo())
+                                .totalPrice(order.getTotalPrice())
+                                .paymentMethod(order.getPaymentMethod())
+                                .orderType(order.getOrderType())
+                                .createdAt(order.getCreatedAt())
+                                .updatedAt(order.getUpdatedAt())
+                                .items(order.getOrderItems().stream()
+                                                .map(item -> OrderResponse.OrderItemResponse.builder()
+                                                                .productId(item.getProduct().getId())
+                                                                .productName(item.getProduct().getName())
+                                                                .quantity(item.getQuantity())
+                                                                .price(item.getPrice())
+                                                                .build())
+                                                .collect(Collectors.toList()))
+                                .build();
+
         }
 }

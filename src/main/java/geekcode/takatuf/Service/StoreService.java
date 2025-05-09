@@ -6,6 +6,7 @@ import jakarta.persistence.EntityNotFoundException;
 import geekcode.takatuf.Entity.Store;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Exception.Types.BadRequestException;
+import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,7 @@ public class StoreService {
                 .orElseThrow(() -> new BadRequestException("User not found."));
 
         if (!store.getOwner().getId().equals(user.getId())) {
-            throw new BadRequestException("You are not the owner of this store.");
+            throw new UnauthorizedException("You are not the owner of this store.");
         }
 
         store.setName(request.getName());
@@ -89,7 +90,7 @@ public class StoreService {
                 .orElseThrow(() -> new BadRequestException("User not found."));
 
         if (!store.getOwner().getId().equals(user.getId())) {
-            throw new BadRequestException("You are not the owner of this store.");
+            throw new UnauthorizedException("You are not the owner of this store.");
         }
 
         storeRepository.delete(store);
