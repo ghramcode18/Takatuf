@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
+
 public class OTPInfo {
     private final String otp;
     private final LocalDateTime createdAt;
