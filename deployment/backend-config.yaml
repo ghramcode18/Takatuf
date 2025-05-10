@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: takatuf
+data:
+  spring.application.name: takatuf_db
+  server.port: "8080"
+  spring.tomcat.accesslog.enabled: "true"
+  spring.jpa.show-sql: "true"
+  spring.jpa.hibernate.ddl-auto: update
+  spring.messages.basename: messages
+  spring.messages.encoding: UTF-8
+  app.frontend.url: http://localhost:4200
+  spring.mail.host: smtp.gmail.com
+  spring.mail.port: "587"
+  spring.mail.properties.mail.smtp.auth: "true"
+  spring.mail.properties.mail.smtp.starttls.enable: "true"
+  spring.mail.properties.mail.smtp.starttls.required: "true"
+  spring.mail.transport.protocol: smtp
+  spring.mail.debug: "true"
