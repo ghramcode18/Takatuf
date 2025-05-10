@@ -74,10 +74,17 @@ public class User {
     @OneToMany(mappedBy = "receiver")
     private List<Message> receivedMessages;
 
-    // One-to-Many with Reviews
     @OneToMany(mappedBy = "user")
-    private List<Review> reviews;
+    private List<ProductReview> productReviews;
 
+    // One-to-Many with SellerReviews
+    @OneToMany(mappedBy = "reviewer")
+    private List<SellerReview> writtenSellerReviews;
+
+    @OneToMany(mappedBy = "seller")
+    private List<SellerReview> receivedSellerReviews;
+
+    
     // One-to-Many with Complaints
     @OneToMany(mappedBy = "user")
     private List<Complaint> complaints;
