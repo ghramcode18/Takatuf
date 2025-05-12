@@ -2,7 +2,7 @@ package geekcode.takatuf.Service;
 
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Entity.UserRole;
-import geekcode.takatuf.Entity.OTPInfo;
+import geekcode.takatuf.dto.auth.OTPInfo;
 import geekcode.takatuf.Entity.Role;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Repository.RoleRepository;
@@ -74,14 +74,8 @@ public class AuthService {
         String refreshToken = jwtService.generateRefreshToken(user);
 
         return AuthResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .type(user.getType().name())
-                .role(request.getRole() != null ? request.getRole().name() : null)
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .message("Registered Successfully")
                 .build();
     }
 
@@ -98,14 +92,9 @@ public class AuthService {
         String refreshToken = jwtService.generateRefreshToken(user);
 
         return AuthResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .type(user.getType().name())
-                .role(user.getUserRoles().isEmpty() ? null : user.getUserRoles().get(0).getRole().getRoleName().name())
+
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .message("Login Successfully")
                 .build();
     }
 
@@ -116,6 +105,7 @@ public class AuthService {
     private final Map<String, OTPInfo> otpStorage = new HashMap<>();
     private final Map<String, String> otpToEmailMap = new HashMap<>();
     private String lastVerifiedEmail;
+
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException("Email not found"));
@@ -154,19 +144,19 @@ public class AuthService {
         if (lastVerifiedEmail == null) {
             throw new BadRequestException("OTP verification required");
         }
-    
+
         OTPInfo otpInfo = otpStorage.get(lastVerifiedEmail);
-    
+
         if (otpInfo == null || !otpInfo.isVerified()) {
             throw new BadRequestException("OTP verification required");
         }
-    
+
         User user = userRepository.findByEmail(lastVerifiedEmail)
                 .orElseThrow(() -> new BadRequestException("Email not found"));
-    
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-    
+
         otpStorage.remove(lastVerifiedEmail);
         otpToEmailMap.values().removeIf(e -> e.equals(lastVerifiedEmail));
         lastVerifiedEmail = null;
@@ -199,14 +189,8 @@ public class AuthService {
         String newAccessToken = jwtService.generateAccessToken(user);
 
         return AuthResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .type(user.getType().name())
-                .role(user.getUserRoles().isEmpty() ? null : user.getUserRoles().get(0).getRole().getRoleName().name())
                 .accessToken(newAccessToken)
                 .refreshToken(refreshToken)
-                .message("Access token refreshed successfully")
                 .build();
     }
 
