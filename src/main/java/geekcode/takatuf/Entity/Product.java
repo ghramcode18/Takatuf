@@ -30,7 +30,6 @@ public class Product {
     private String color;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
     @ManyToOne
     @JoinColumn(name = "store_id")
     private Store store;
