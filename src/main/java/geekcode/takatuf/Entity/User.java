@@ -5,7 +5,6 @@ import lombok.*;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.time.LocalDateTime;
 import geekcode.takatuf.Enums.UserType;
