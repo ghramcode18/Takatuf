@@ -6,6 +6,5 @@ package geekcode.takatuf.dto.auth;
 @Getter
 @Setter
 public class OtpVerificationRequest {
-    private String email;
     private String otp;
 }

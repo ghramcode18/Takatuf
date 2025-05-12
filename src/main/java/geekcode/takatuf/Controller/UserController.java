@@ -1,7 +1,6 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.dto.user.UpdateUserRequest;
-import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

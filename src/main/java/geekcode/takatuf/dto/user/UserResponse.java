@@ -1,6 +1,6 @@
 package geekcode.takatuf.dto.user;
 
-import geekcode.takatuf.Enums.UserType;
+
 import lombok.Builder;
 import lombok.Data;
 import java.util.List;
