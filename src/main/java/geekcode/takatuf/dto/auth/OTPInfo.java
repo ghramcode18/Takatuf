@@ -1,4 +1,4 @@
-package geekcode.takatuf.Entity;
+package geekcode.takatuf.dto.auth;
 
 import java.time.LocalDateTime;
 import lombok.Getter;
