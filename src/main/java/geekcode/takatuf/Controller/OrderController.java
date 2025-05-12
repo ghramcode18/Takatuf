@@ -48,4 +48,10 @@ public class OrderController {
         orderService.cancelOrder(userId, orderId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/tracking/{orderId}")
+    public ResponseEntity<OrderResponse> trackOrder(@PathVariable Long orderId) {
+        return ResponseEntity.ok(orderService.trackOrder(orderId));
+    }
+
 }
