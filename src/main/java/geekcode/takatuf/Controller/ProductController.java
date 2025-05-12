@@ -44,13 +44,6 @@ public class ProductController {
         return ResponseEntity.ok(product);
     }
 
-
-    @GetMapping("/store/{storeId}")
-    public ResponseEntity<List<ProductResponse>> getProductsByStoreId(@PathVariable Long storeId) {
-        List<ProductResponse> products = productService.getProductsByStoreId(storeId);
-        return ResponseEntity.ok(products);
-        }
-
     @GetMapping("/store/{storeId}/products")
     public Page<ProductResponse> getProducts(
             @PathVariable Long storeId,
