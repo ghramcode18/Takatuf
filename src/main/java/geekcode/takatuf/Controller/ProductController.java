@@ -7,6 +7,10 @@ import geekcode.takatuf.dto.product.ProductResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -39,6 +43,13 @@ public class ProductController {
         ProductResponse product = productService.getProductById(id);
         return ResponseEntity.ok(product);
     }
+
+
+    @GetMapping("/store/{storeId}")
+    public ResponseEntity<List<ProductResponse>> getProductsByStoreId(@PathVariable Long storeId) {
+        List<ProductResponse> products = productService.getProductsByStoreId(storeId);
+        return ResponseEntity.ok(products);
+        }
 
     @GetMapping("/store/{storeId}/products")
     public Page<ProductResponse> getProducts(
