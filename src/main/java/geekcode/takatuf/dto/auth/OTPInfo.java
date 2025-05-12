@@ -1,9 +1,11 @@
-package geekcode.takatuf.Entity;
+package geekcode.takatuf.dto.auth;
 
 import java.time.LocalDateTime;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class OTPInfo {
     private final String otp;
     private final LocalDateTime createdAt;
