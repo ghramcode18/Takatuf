@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 @Table(name = "stores")
 @Data
@@ -19,19 +21,16 @@ public class Store {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne
-    @JoinColumn(name = "owner_id", insertable = false, updatable = false)
-    private User ownerId;
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
     private String name;
     private String description;
     private String status;
     private LocalDateTime createdAt;
-    @ManyToOne
-    @JoinColumn(name = "owner_id", insertable = false, updatable = false)
-    private User owner;
 
     @OneToMany(mappedBy = "store")
+
     private List<Product> products;
 }

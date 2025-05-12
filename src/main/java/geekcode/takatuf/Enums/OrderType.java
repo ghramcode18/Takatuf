@@ -1,7 +1,5 @@
 package geekcode.takatuf.Enums;
 
 public enum OrderType {
-    SENDED,
-    PENDING,
-    DELIVERED
+    ONLINE, IN_STORE, PICKUP, DELIVERY
 }

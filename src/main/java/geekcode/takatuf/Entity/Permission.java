@@ -20,5 +20,6 @@ public class Permission {
     private String description;
 
     @OneToMany(mappedBy = "permission", cascade = CascadeType.ALL)
+    
     private List<RolePermission> rolePermissions;
 }
