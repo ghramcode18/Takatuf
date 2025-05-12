@@ -3,6 +3,6 @@ COPY . .
 RUN mvn clean package -DskipTests
 
 FROM openjdk:17.0.1-jdk-slim
-COPY --from=build /target/Source-Safe-0.0.1-SNAPSHOT.jar Source-Safe.jar
+COPY --from=build /target/takatuf-0.0.1-SNAPSHOT.jar takatuf.jar
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","Source-Safe.jar"]        
+ENTRYPOINT ["java","-jar","takatuf.jar"]
