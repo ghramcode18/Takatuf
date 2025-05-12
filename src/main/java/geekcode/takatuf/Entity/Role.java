@@ -11,6 +11,8 @@ import geekcode.takatuf.Enums.RoleName;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 public class Role {
 
@@ -19,10 +21,11 @@ public class Role {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(unique = true, nullable = false)
-    private RoleName role;
+    @Column(name = "role_name", unique = true, nullable = false)
+    private RoleName roleName;
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL)
+
     private List<RolePermission> rolePermissions;
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL)

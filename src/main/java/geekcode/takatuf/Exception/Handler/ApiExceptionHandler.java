@@ -9,7 +9,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -21,7 +20,12 @@ public class ApiExceptionHandler {
 
     private ResponseEntity<Object> buildResponseEntity(Exception ex, HttpStatus status, String code,
             HttpServletRequest request) {
-        String localizedMessage = messageSource.getMessage(code, null, LocaleContextHolder.getLocale());
+        String localizedMessage;
+        try {
+            localizedMessage = messageSource.getMessage(code, null, LocaleContextHolder.getLocale());
+        } catch (Exception e) {
+            localizedMessage = code;
+        }
 
         log.error("Exception [{}]: {}", code, ex.getMessage(), ex);
 

@@ -1,26 +1,15 @@
-package geekcode.takatuf.Entity;
+package geekcode.takatuf.dto.product;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "products")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-
-@Setter
-@Getter
-
-public class Product {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ProductResponse {
     private Long id;
-
     private String name;
     private String description;
     private Integer piece;
@@ -30,8 +19,6 @@ public class Product {
     private String color;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
-    @ManyToOne
-    @JoinColumn(name = "store_id")
-    private Store store;
+    private Long storeId;
+    private String storeName;
 }

@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import geekcode.takatuf.Enums.OrderStatus;
+
 @Entity
 @Table(name = "order_items")
 @Data
@@ -28,9 +30,10 @@ public class OrderItem {
     private BigDecimal price;
     private String address;
     private LocalDateTime orderDate;
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
 
     @ManyToOne
-    @JoinColumn(name = "order_id", insertable = false, updatable = false)
+    @JoinColumn(name = "order_id")
     private Order order;
 }
