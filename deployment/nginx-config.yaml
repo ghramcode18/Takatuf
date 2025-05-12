@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: takatuf
+data:
+  nginx.conf: |
+    events {}
+    http {
+      upstream backend {
+        server takatuf:8080;
+      }
+
+      server {
+        listen 80;
+        location / {
+          proxy_pass http://backend;
+        }
+      }
+    }

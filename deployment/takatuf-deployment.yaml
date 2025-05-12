@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: takatuf
+  namespace: takatuf
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: takatuf
+  template:
+    metadata:
+      labels:
+        app: takatuf
+    spec:
+      containers:
+        - name: takatuf
+          image: ghramcode18/takatuf:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+
