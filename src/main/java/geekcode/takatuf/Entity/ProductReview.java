@@ -2,28 +2,27 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notifications")
-
+@Table(name = "product_reviews")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+public class ProductReview {
 
-@Setter
-@Getter
-
-public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type;
-    private String message;
-    private LocalDateTime timestamp;
+    private Integer rating;
+    private String comment;
+    private LocalDateTime createdAt;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

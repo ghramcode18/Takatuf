@@ -4,16 +4,19 @@ import geekcode.takatuf.Entity.*;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.*;
+import geekcode.takatuf.Repository.CustomOrderRepository;
 import geekcode.takatuf.Enums.OrderStatus;
 import geekcode.takatuf.Enums.TrackingInfo;
 import geekcode.takatuf.dto.order.PlaceOrderRequest;
+import geekcode.takatuf.dto.order.CustomOrderResponse;
 import geekcode.takatuf.dto.order.OrderResponse;
+import geekcode.takatuf.dto.order.PlaceCustomOrderRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import geekcode.takatuf.dto.order.PlaceCustomOrderDecisionRequest;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +27,8 @@ import java.util.stream.Collectors;
 public class OrderService {
 
         private final OrderRepository orderRepository;
+        private final CustomOrderRepository customOrderRepository;
+        private final StoreRepository storeRepository;
         private final ProductRepository productRepository;
         private final OrderItemRepository orderItemRepository;
         private final UserRepository userRepository;
@@ -155,4 +160,83 @@ public class OrderService {
                                 .build();
 
         }
+
+        @Transactional
+        public CustomOrderResponse placeCustomOrder(Long userId, PlaceCustomOrderRequest request) {
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+                Store store = storeRepository.findById(request.getStoreId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Store not found: " + request.getStoreId()));
+
+                CustomOrder customOrder = CustomOrder.builder()
+                                .user(user)
+                                .store(store)
+                                .category(request.getCategory())
+                                .customizationDetails(request.getCustomizationDetails())
+                                .status(OrderStatus.PLACED)
+                                .trackingInfo(TrackingInfo.PROCESSING)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+
+                CustomOrder savedOrder = customOrderRepository.save(customOrder);
+
+                return CustomOrderResponse.builder()
+                                .customOrderId(savedOrder.getId())
+                                .category(savedOrder.getCategory())
+                                .customizationDetails(savedOrder.getCustomizationDetails())
+                                .proposedPrice(savedOrder.getProposedPrice())
+                                .status(savedOrder.getStatus())
+                                .trackingInfo(savedOrder.getTrackingInfo())
+                                .createdAt(savedOrder.getCreatedAt())
+                                .build();
+        }
+
+        @Transactional
+        public CustomOrderResponse decideCustomOrder(Long sellerId, Long customOrderId,
+                        PlaceCustomOrderDecisionRequest request) {
+                CustomOrder customOrder = customOrderRepository.findById(customOrderId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Custom Order not found: " + customOrderId));
+
+                Store store = customOrder.getStore();
+                if (!store.getOwner().getId().equals(sellerId)) {
+                        throw new UnauthorizedException("Unauthorized to decide on this custom order");
+                }
+
+                if (customOrder.getStatus() != OrderStatus.PLACED) {
+                        throw new RuntimeException("Custom order already processed");
+                }
+
+                if (Boolean.TRUE.equals(request.getAccept())) {
+                        if (request.getProposedPrice() == null
+                                        || request.getProposedPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                                throw new RuntimeException(
+                                                "Proposed price must be provided and positive when accepting the order");
+                        }
+
+                        customOrder.setStatus(OrderStatus.ACCEPTED);
+                        customOrder.setTrackingInfo(TrackingInfo.ACCEPTED_BY_STORE);
+                        customOrder.setProposedPrice(request.getProposedPrice());
+                } else {
+
+                        customOrder.setStatus(OrderStatus.REJECTED);
+                        customOrder.setTrackingInfo(TrackingInfo.REJECTED_BY_STORE);
+                }
+
+                customOrder.setUpdatedAt(LocalDateTime.now());
+                customOrderRepository.save(customOrder);
+
+                return CustomOrderResponse.builder()
+                                .customOrderId(customOrder.getId())
+                                .category(customOrder.getCategory())
+                                .customizationDetails(customOrder.getCustomizationDetails())
+                                .proposedPrice(customOrder.getProposedPrice())
+                                .status(customOrder.getStatus())
+                                .trackingInfo(customOrder.getTrackingInfo())
+                                .createdAt(customOrder.getCreatedAt())
+                                .build();
+        }
+
 }

@@ -31,6 +31,6 @@ public class Store {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "store")
-
     private List<Product> products;
+
 }
