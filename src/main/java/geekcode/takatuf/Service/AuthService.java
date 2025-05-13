@@ -2,7 +2,7 @@ package geekcode.takatuf.Service;
 
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Entity.UserRole;
-import geekcode.takatuf.dto.*;
+import geekcode.takatuf.dto.auth.OTPInfo;
 import geekcode.takatuf.Entity.Role;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Repository.RoleRepository;
@@ -75,7 +75,6 @@ public class AuthService {
         String refreshToken = jwtService.generateRefreshToken(user);
 
         return AuthResponse.builder()
-
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
