@@ -21,6 +21,9 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "is_seen")
+    private boolean seen;
+
     private String type;
     private String message;
     private LocalDateTime timestamp;
