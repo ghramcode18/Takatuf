@@ -24,6 +24,11 @@ public class OrderResponse {
     private LocalDateTime updatedAt;
     private List<OrderItemResponse> items;
 
+    // Fields for custom orders (nullable)
+    private String category;
+    private String customizationDetails;
+    private BigDecimal proposedPrice;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
