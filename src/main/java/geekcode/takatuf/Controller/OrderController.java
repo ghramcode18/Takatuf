@@ -4,10 +4,8 @@ import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.OrderService;
 import geekcode.takatuf.dto.order.PlaceOrderRequest;
-import geekcode.takatuf.dto.order.CustomOrderResponse;
 import geekcode.takatuf.dto.order.OrderResponse;
-import geekcode.takatuf.dto.order.PlaceCustomOrderDecisionRequest;
-import geekcode.takatuf.dto.order.PlaceCustomOrderRequest;
+import geekcode.takatuf.dto.order.CustomOrderDecisionRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,28 +48,32 @@ public class OrderController {
     }
 
     @GetMapping("/tracking/{orderId}")
-    public ResponseEntity<OrderResponse> trackOrder(@PathVariable Long orderId) {
+    public ResponseEntity<OrderResponse> trackOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId) {
+
+        extractUserId(userDetails);
         return ResponseEntity.ok(orderService.trackOrder(orderId));
     }
 
-    @PostMapping("/custom-orders/place")
-    public ResponseEntity<CustomOrderResponse> placeCustomOrder(
+    @PostMapping("/custom/place")
+    public ResponseEntity<OrderResponse> placeCustomOrder(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PlaceCustomOrderRequest request) {
+            @RequestBody PlaceOrderRequest request) {
 
         Long userId = extractUserId(userDetails);
-        CustomOrderResponse response = orderService.placeCustomOrder(userId, request);
+        OrderResponse response = orderService.placeCustomOrder(userId, request);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/custom-orders/decide/{customOrderId}")
-    public ResponseEntity<CustomOrderResponse> decideCustomOrder(
+    @PostMapping("/custom/decide/{orderId}")
+    public ResponseEntity<OrderResponse> decideCustomOrder(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long customOrderId,
-            @RequestBody PlaceCustomOrderDecisionRequest request) {
+            @PathVariable Long orderId,
+            @RequestBody CustomOrderDecisionRequest request) {
 
         Long sellerId = extractUserId(userDetails);
-        CustomOrderResponse response = orderService.decideCustomOrder(sellerId, customOrderId, request);
+        OrderResponse response = orderService.decideCustomOrder(sellerId, orderId, request);
         return ResponseEntity.ok(response);
     }
 

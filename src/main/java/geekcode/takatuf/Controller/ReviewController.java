@@ -51,18 +51,36 @@ public class ReviewController {
     }
 
     @GetMapping("/seller/{sellerId}")
-    public List<SellerReviewResponse> getSellerReviews(@PathVariable Long sellerId) {
-        return reviewService.getSellerReviews(sellerId);
+    public ResponseEntity<List<SellerReviewResponse>> getSellerReviews(
+            @PathVariable Long sellerId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.ok(reviewService.getSellerReviews(sellerId));
     }
 
     @GetMapping("/products/{productId}/summary")
-    public ProductReviewSummary getProductReviewSummary(@PathVariable Long productId) {
-        return reviewService.getProductReviewSummary(productId);
+    public ResponseEntity<ProductReviewSummary> getProductReviewSummary(
+            @PathVariable Long productId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.ok(reviewService.getProductReviewSummary(productId));
     }
 
     @GetMapping("/sellers/{sellerId}/summary")
-    public SellerReviewSummary getSellerSummary(@PathVariable Long sellerId) {
-        return reviewService.getSellerReviewSummary(sellerId);
+    public ResponseEntity<SellerReviewSummary> getSellerSummary(
+            @PathVariable Long sellerId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.ok(reviewService.getSellerReviewSummary(sellerId));
     }
 
 }
