@@ -23,6 +23,9 @@ public class StoreController {
     public ResponseEntity<StoreResponse> createStore(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody StoreRequest request) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         String email = userDetails.getUsername();
         StoreResponse response = storeService.createStore(email, request);
@@ -34,6 +37,9 @@ public class StoreController {
             @PathVariable Long id,
             @Valid @RequestBody StoreRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         String email = userDetails.getUsername();
         StoreResponse response = storeService.updateStore(id, request, email);
@@ -41,22 +47,37 @@ public class StoreController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<StoreResponse> getStore(@PathVariable Long id) {
+    public ResponseEntity<StoreResponse> getStore(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         StoreResponse response = storeService.getStoreByIdResponse(id);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteStore(@PathVariable Long id,
+    public ResponseEntity<?> deleteStore(
+            @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         storeService.deleteStore(id, userDetails.getUsername());
         return ResponseEntity.ok().body("Store deleted successfully.");
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<StoreResponse>> getAllStores() {
+    public ResponseEntity<List<StoreResponse>> getAllStores(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         List<StoreResponse> stores = storeService.getAllStores();
         return ResponseEntity.ok(stores);
     }
-
 }
