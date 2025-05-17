@@ -9,6 +9,5 @@ import java.util.List;
 public class SellerReviewSummary {
     private Double averageRating;
     private Integer totalReviews;
-    private List<SellerReviewResponse> commentsOnly;
     private List<SellerReviewResponse> ratedReviews;
 }

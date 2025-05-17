@@ -5,7 +5,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "product_reviews")
+@Table(name = "product_reviews", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "product_id" }))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
