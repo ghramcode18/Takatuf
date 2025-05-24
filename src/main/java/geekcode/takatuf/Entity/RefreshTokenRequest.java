@@ -1,4 +1,4 @@
-package geekcode.takatuf.dto.auth;
+package geekcode.takatuf.Entity;
 
 import lombok.Data;
 
