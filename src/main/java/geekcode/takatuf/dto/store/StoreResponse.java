@@ -1,5 +1,7 @@
 package geekcode.takatuf.dto.store;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import lombok.*;
 
 @Getter
@@ -14,4 +16,5 @@ public class StoreResponse {
     private String status;
     private String ownerEmail;
     private String ownerName;
+    private String imageUrl;
 }

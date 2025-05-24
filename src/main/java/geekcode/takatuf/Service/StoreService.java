@@ -11,8 +11,13 @@ import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.*;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,12 +34,15 @@ public class StoreService {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new BadRequestException("User not found."));
 
+        String imageUrl = saveImage(request.getImage());
+
         Store store = Store.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .status("ACTIVE")
                 .createdAt(LocalDateTime.now())
                 .owner(user)
+                .imageUrl(imageUrl)
                 .build();
 
         Store savedStore = storeRepository.save(store);
@@ -54,12 +62,38 @@ public class StoreService {
 
         store.setName(request.getName());
         store.setDescription(request.getDescription());
+
         if (request.getStatus() != null) {
             store.setStatus(request.getStatus());
         }
 
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String imageUrl = saveImage(request.getImage());
+            store.setImageUrl(imageUrl);
+        }
+
         Store updatedStore = storeRepository.save(store);
         return mapToResponse(updatedStore);
+    }
+
+    private String saveImage(MultipartFile image) {
+        if (image == null || image.isEmpty())
+            return null;
+
+        try {
+            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+            Path uploadPath = Paths.get("uploads/");
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return "/uploads/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image", e);
+        }
     }
 
     public Store getStoreById(Long id) {
@@ -79,6 +113,7 @@ public class StoreService {
                 .status(store.getStatus())
                 .ownerEmail(store.getOwner().getEmail())
                 .ownerName(store.getOwner().getName())
+                .imageUrl(store.getImageUrl())
                 .build();
     }
 
@@ -98,6 +133,15 @@ public class StoreService {
 
     public List<StoreResponse> getAllStores() {
         List<Store> stores = storeRepository.findAll();
+        return stores.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public List<StoreResponse> getStoresByOwnerEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found."));
+        List<Store> stores = storeRepository.findByOwner_Id(user.getId());
         return stores.stream()
                 .map(this::mapToResponse)
                 .toList();
