@@ -19,6 +19,8 @@ public class ReviewService {
         private final ProductReviewRepository productReviewRepository;
         private final SellerReviewRepository sellerReviewRepository;
         private final ProductRepository productRepository;
+        private final StoreReviewRepository storeReviewRepository;
+        private final StoreRepository storeRepository;
         private final UserRepository userRepository;
 
         @Transactional
@@ -191,6 +193,78 @@ public class ReviewService {
                                 .comment(r.getComment())
                                 .reviewerName(reviewerName)
                                 .createdAt(r.getCreatedAt())
+                                .build();
+        }
+
+        @Transactional
+        public void addStoreReview(Long userId, StoreReviewRequest request) {
+                boolean hasRating = request.getRating() != null;
+                boolean hasComment = request.getComment() != null && !request.getComment().isBlank();
+
+                if (!hasRating && !hasComment) {
+                        throw new IllegalArgumentException("Either rating or comment must be provided.");
+                }
+
+                User reviewer = userRepository.findById(userId)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+                Store store = storeRepository.findById(request.getStoreId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+
+                storeReviewRepository.findByReviewer_IdAndStore_Id(userId, request.getStoreId())
+                                .ifPresentOrElse(existingReview -> {
+                                        if (hasRating)
+                                                existingReview.setRating(request.getRating());
+                                        if (hasComment)
+                                                existingReview.setComment(request.getComment());
+                                        existingReview.setCreatedAt(LocalDateTime.now());
+                                        storeReviewRepository.save(existingReview);
+                                }, () -> {
+                                        StoreReview review = StoreReview.builder()
+                                                        .reviewer(reviewer)
+                                                        .store(store)
+                                                        .rating(hasRating ? request.getRating() : null)
+                                                        .comment(hasComment ? request.getComment() : null)
+                                                        .createdAt(LocalDateTime.now())
+                                                        .build();
+                                        storeReviewRepository.save(review);
+                                });
+        }
+
+        public List<StoreReviewResponse> getStoreReviews(Long storeId) {
+                return storeReviewRepository.findByStore_Id(storeId).stream()
+                                .map(r -> StoreReviewResponse.builder()
+                                                .id(r.getId())
+                                                .rating(r.getRating())
+                                                .comment(r.getComment())
+                                                .reviewerName(r.getReviewer().getName())
+                                                .createdAt(r.getCreatedAt())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        public StoreReviewSummary getStoreReviewSummary(Long storeId) {
+                List<StoreReview> reviews = storeReviewRepository.findByStore_Id(storeId);
+
+                double average = reviews.stream()
+                                .mapToInt(StoreReview::getRating)
+                                .average()
+                                .orElse(0.0);
+
+                List<StoreReviewResponse> responses = reviews.stream()
+                                .map(r -> StoreReviewResponse.builder()
+                                                .id(r.getId())
+                                                .rating(r.getRating())
+                                                .comment(r.getComment())
+                                                .reviewerName(r.getReviewer().getName())
+                                                .createdAt(r.getCreatedAt())
+                                                .build())
+                                .collect(Collectors.toList());
+
+                return StoreReviewSummary.builder()
+                                .averageRating(average)
+                                .totalReviews(reviews.size())
+                                .ratedReviews(responses)
                                 .build();
         }
 

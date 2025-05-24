@@ -4,11 +4,15 @@ import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
 import jakarta.persistence.EntityNotFoundException;
 import geekcode.takatuf.Entity.Store;
+import geekcode.takatuf.Entity.StoreReview;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Exception.Types.BadRequestException;
+import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
+import geekcode.takatuf.Repository.StoreRepository;
+import geekcode.takatuf.Repository.StoreReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +29,7 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final StoreReviewRepository storeReviewRepository;
 
     public StoreResponse createStore(String username, StoreRequest request) {
         if (storeRepository.existsByName(request.getName())) {
@@ -96,24 +101,29 @@ public class StoreService {
         }
     }
 
-    public Store getStoreById(Long id) {
-        return storeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Store not found"));
-    }
-
-    public StoreResponse getStoreByIdResponse(Long id) {
-        return mapToResponse(getStoreById(id));
+    public StoreResponse getStoreById(Long storeId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+        return mapToResponse(store);
     }
 
     private StoreResponse mapToResponse(Store store) {
+        List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());
+        double averageRating = reviews.stream()
+                .mapToInt(StoreReview::getRating)
+                .average()
+                .orElse(0.0);
+
         return StoreResponse.builder()
                 .id(store.getId())
                 .name(store.getName())
                 .description(store.getDescription())
                 .status(store.getStatus())
+                .imageUrl(store.getImageUrl())
                 .ownerEmail(store.getOwner().getEmail())
                 .ownerName(store.getOwner().getName())
-                .imageUrl(store.getImageUrl())
+                .averageRating(averageRating)
+                .totalReviews(reviews.size())
                 .build();
     }
 
