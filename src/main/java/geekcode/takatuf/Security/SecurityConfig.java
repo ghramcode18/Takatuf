@@ -40,8 +40,8 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-               .requestMatchers("/api/auth/**").permitAll() 
-                // .requestMatchers("/api/user/**","/api/store/**","/api/product/**","/api/orders/**").authenticated()
+                .requestMatchers("/api/**").permitAll()
+               // .requestMatchers("/api/user/**","/api/store/**","/api/product/**","/api/orders/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
