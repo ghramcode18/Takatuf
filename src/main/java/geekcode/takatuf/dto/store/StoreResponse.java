@@ -9,12 +9,17 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Data
 public class StoreResponse {
     private Long id;
     private String name;
     private String description;
     private String status;
-    private String ownerEmail;
-    private String ownerName;
     private String imageUrl;
+
+    private String ownerName;
+    private String ownerEmail;
+
+    private Double averageRating;
+    private Integer totalReviews;
 }

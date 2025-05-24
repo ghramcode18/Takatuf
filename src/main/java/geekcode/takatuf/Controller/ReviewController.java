@@ -87,4 +87,33 @@ public class ReviewController {
         return userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
     }
+
+    @PostMapping("/store")
+    public ResponseEntity<Void> addStoreReview(
+            @RequestBody StoreReviewRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = getAuthenticatedUser(userDetails);
+        reviewService.addStoreReview(user.getId(), request);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/store/{storeId}")
+    public ResponseEntity<List<StoreReviewResponse>> getStoreReviews(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        getAuthenticatedUser(userDetails);
+        return ResponseEntity.ok(reviewService.getStoreReviews(storeId));
+    }
+
+    @GetMapping("/stores/{storeId}/summary")
+    public ResponseEntity<StoreReviewSummary> getStoreReviewSummary(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        getAuthenticatedUser(userDetails);
+        return ResponseEntity.ok(reviewService.getStoreReviewSummary(storeId));
+    }
+
 }

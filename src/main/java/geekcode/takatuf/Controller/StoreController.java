@@ -5,6 +5,8 @@ import geekcode.takatuf.dto.store.StoreResponse;
 import geekcode.takatuf.Service.StoreService;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -68,11 +70,12 @@ public class StoreController {
     public ResponseEntity<StoreResponse> getStore(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
+
         if (userDetails == null) {
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        StoreResponse response = storeService.getStoreByIdResponse(id);
+        StoreResponse response = storeService.getStoreById(id);
         return ResponseEntity.ok(response);
     }
 
