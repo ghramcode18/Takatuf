@@ -8,7 +8,13 @@ import geekcode.takatuf.Exception.Types.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.UUID;
+import java.nio.file.Path;
+import java.io.IOException;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
@@ -18,6 +24,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public String storeProfileImage(MultipartFile imageFile) throws IOException {
+        String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+        Path path = Paths.get("uploads/user/images/" + fileName);
+        Files.createDirectories(path.getParent());
+        Files.write(path, imageFile.getBytes());
+        return "/uploads/user/images/" + fileName;
+    }
 
     public UserResponse updateUser(Long userId, UpdateUserRequest updateRequest) {
         User existingUser = userRepository.findById(userId)
@@ -38,12 +52,12 @@ public class UserService {
             existingUser.setPhoneNumber(updateRequest.getPhoneNumber());
         }
 
-        if (updateRequest.getPassword() != null && !updateRequest.getPassword().isEmpty()) {
+        if (updateRequest.getPassword() != null && !updateRequest.getPassword().isBlank()) {
             existingUser.setPassword(passwordEncoder.encode(updateRequest.getPassword()));
         }
 
-        if (updateRequest.getType() != null) {
-            existingUser.setType(updateRequest.getType());
+        if (updateRequest.getProfileImageUrl() != null) {
+            existingUser.setProfileImageUrl(updateRequest.getProfileImageUrl());
         }
 
         existingUser.setUpdatedAt(LocalDateTime.now());
@@ -59,6 +73,7 @@ public class UserService {
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .type(user.getType().name())
+                .profileImageUrl(user.getProfileImageUrl())
                 .roles(
                         user.getUserRoles().stream()
                                 .map(userRole -> userRole.getRole().getRoleName().name())
