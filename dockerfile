@@ -3,12 +3,8 @@ FROM maven:3.8.5-openjdk-17 AS build
 
 WORKDIR /app
 
-# Copy only pom.xml first to cache dependencies
-COPY pom.xml .
-RUN mvn dependency:go-offline
-
-# Now copy the rest of the source code
-COPY src ./src
+# Copy entire project (not just pom.xml!)
+COPY . .
 
 # Build the project
 RUN mvn clean package -DskipTests
