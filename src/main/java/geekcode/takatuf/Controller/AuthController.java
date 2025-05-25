@@ -1,12 +1,12 @@
 package geekcode.takatuf.Controller;
 
+import geekcode.takatuf.Entity.RefreshTokenRequest;
 import geekcode.takatuf.Security.JwtService;
 import geekcode.takatuf.Service.AuthService;
 import geekcode.takatuf.dto.auth.AuthResponse;
 import geekcode.takatuf.dto.auth.EmailRequest;
 import geekcode.takatuf.dto.auth.LoginRequest;
 import geekcode.takatuf.dto.auth.OtpVerificationRequest;
-import geekcode.takatuf.dto.auth.RefreshTokenRequest;
 import geekcode.takatuf.dto.auth.RegisterRequest;
 import geekcode.takatuf.dto.auth.ResetPasswordRequest;
 import lombok.RequiredArgsConstructor;

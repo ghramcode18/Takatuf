@@ -2,38 +2,29 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import geekcode.takatuf.Enums.ProductCategory;
 
 @Entity
-@Table(name = "products")
+@Table(name = "store_reviews")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+public class StoreReview {
 
-@Setter
-@Getter
-
-public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
-    private String description;
-    private BigDecimal price;
-    private String image;
-
-    @Enumerated(EnumType.STRING)
-    private ProductCategory category;
-
-
+    private Integer rating;
+    private String comment;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
     @ManyToOne
     @JoinColumn(name = "store_id")
     private Store store;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User reviewer;
 }

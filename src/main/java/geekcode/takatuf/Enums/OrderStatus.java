@@ -1,5 +1,5 @@
 package geekcode.takatuf.Enums;
 
 public enum OrderStatus {
-    PLACED, PROCESSING, COMPLETED, CANCELLED
+    PLACED, PROCESSING, ACCEPTED, REJECTED, COMPLETED, CANCELLED
 }

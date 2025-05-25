@@ -2,14 +2,18 @@ package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
-
 import geekcode.takatuf.Service.StoreService;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 @RestController
@@ -19,44 +23,94 @@ public class StoreController {
 
     private final StoreService storeService;
 
-    @PostMapping("/add")
+    @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StoreResponse> createStore(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody StoreRequest request) {
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
 
-        String email = userDetails.getUsername();
-        StoreResponse response = storeService.createStore(email, request);
+        StoreRequest request = new StoreRequest();
+        request.setName(name);
+        request.setDescription(description);
+        request.setStatus(status);
+        request.setImage(image);
+
+        StoreResponse response = storeService.createStore(userDetails.getUsername(), request);
         return ResponseEntity.status(201).body(response);
     }
 
-    @PostMapping("/update/{id}")
+    @PostMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StoreResponse> updateStore(
             @PathVariable Long id,
-            @Valid @RequestBody StoreRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
 
-        String email = userDetails.getUsername();
-        StoreResponse response = storeService.updateStore(id, request, email);
+        StoreRequest request = new StoreRequest();
+        request.setName(name);
+        request.setDescription(description);
+        request.setStatus(status);
+        request.setImage(image);
+
+        StoreResponse response = storeService.updateStore(id, request, userDetails.getUsername());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<StoreResponse> getStore(@PathVariable Long id) {
-        StoreResponse response = storeService.getStoreByIdResponse(id);
+    public ResponseEntity<StoreResponse> getStore(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        StoreResponse response = storeService.getStoreById(id);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteStore(@PathVariable Long id,
+    public ResponseEntity<?> deleteStore(
+            @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         storeService.deleteStore(id, userDetails.getUsername());
         return ResponseEntity.ok().body("Store deleted successfully.");
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<StoreResponse>> getAllStores() {
+    public ResponseEntity<List<StoreResponse>> getAllStores(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         List<StoreResponse> stores = storeService.getAllStores();
         return ResponseEntity.ok(stores);
+    }
+
+    @GetMapping("/mystores")
+    public ResponseEntity<List<StoreResponse>> getMyStores(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        List<StoreResponse> myStores = storeService.getStoresByOwnerEmail(userDetails.getUsername());
+        return ResponseEntity.ok(myStores);
     }
 
 }

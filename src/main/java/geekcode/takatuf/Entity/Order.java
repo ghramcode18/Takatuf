@@ -4,12 +4,11 @@ import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
+import java.time.LocalDateTime;
 
 import geekcode.takatuf.Enums.OrderStatus;
 import geekcode.takatuf.Enums.OrderType;
 import geekcode.takatuf.Enums.TrackingInfo;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "orders")
@@ -17,17 +16,19 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
-@Setter
-@Getter
-
 public class Order {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private BigDecimal totalPrice;
+    private BigDecimal proposedPrice;
+
     private String paymentMethod;
+
+    private String category;
+    private String customizationDetails;
 
     private LocalDateTime createdAt;
 
@@ -40,7 +41,6 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(name = "order_type")
     private OrderType orderType;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "tracking_info")
     private TrackingInfo trackingInfo;
@@ -53,8 +53,6 @@ public class Order {
     @JoinColumn(name = "store_id")
     private Store store;
 
-    @OneToMany(mappedBy = "order")
-
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems;
-
 }
