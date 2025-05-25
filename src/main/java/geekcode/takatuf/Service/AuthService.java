@@ -11,6 +11,7 @@ import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Security.JwtService;
 import geekcode.takatuf.dto.auth.AuthResponse;
 import geekcode.takatuf.dto.auth.LoginRequest;
+import geekcode.takatuf.dto.auth.OTPInfo;
 import geekcode.takatuf.dto.auth.RegisterRequest;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -92,7 +93,6 @@ public class AuthService {
         String refreshToken = jwtService.generateRefreshToken(user);
 
         return AuthResponse.builder()
-
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
