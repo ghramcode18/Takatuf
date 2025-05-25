@@ -25,7 +25,11 @@ public class ProductController {
     @PostMapping("/add/{storeId}")
     public ResponseEntity<ProductResponse> addProduct(
             @PathVariable Long storeId,
-            @RequestBody Product productData) {
+            @RequestBody Product productData,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
         ProductResponse response = productService.addProduct(storeId, productData);
         return ResponseEntity.ok(response);
     }
@@ -33,30 +37,51 @@ public class ProductController {
     @PostMapping("/update/{productId}")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable Long productId,
-            @RequestBody Product productData) {
+            @RequestBody Product productData,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
         ProductResponse response = productService.updateProduct(productId, productData);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ProductResponse> getProductById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
         ProductResponse product = productService.getProductById(id);
         return ResponseEntity.ok(product);
     }
 
     @GetMapping("/store/{storeId}/products")
-    public Page<ProductResponse> getProducts(
+    public ResponseEntity<Page<ProductResponse>> getProducts(
             @PathVariable Long storeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(name = "per_page", defaultValue = "10") int perPage,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "ASC") String sort_dir) {
-        return productService.getProductsByStoreId(storeId, page, perPage, q, sort, sort_dir);
+            @RequestParam(defaultValue = "ASC") String sort_dir,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Page<ProductResponse> result = productService.getProductsByStoreId(storeId, page, perPage, q, sort, sort_dir);
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<?> deleteProduct(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         productService.deleteProduct(id);
         return ResponseEntity.ok().body(
                 Map.of("message", "Product deleted successfully"));
