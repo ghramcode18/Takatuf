@@ -38,6 +38,8 @@ public class User {
     private String phoneNumber;
     @Enumerated(EnumType.STRING) // Store as enum value
     private UserType type;
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

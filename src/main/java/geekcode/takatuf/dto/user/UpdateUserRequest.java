@@ -20,6 +20,5 @@ public class UpdateUserRequest {
 
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$", message = "Password must contain at least one digit, one lowercase and one uppercase letter")
     private String password;
-
-    private UserType type;
+    private String profileImageUrl;
 }
