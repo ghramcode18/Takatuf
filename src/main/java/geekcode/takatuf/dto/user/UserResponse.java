@@ -1,6 +1,5 @@
 package geekcode.takatuf.dto.user;
 
-
 import lombok.Builder;
 import lombok.Data;
 import java.util.List;
@@ -13,5 +12,6 @@ public class UserResponse {
     private String email;
     private String phoneNumber;
     private String type;
+    private String profileImageUrl;
     private List<String> roles;
 }

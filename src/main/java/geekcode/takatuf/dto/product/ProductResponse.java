@@ -12,11 +12,9 @@ public class ProductResponse {
     private Long id;
     private String name;
     private String description;
-    private Integer piece;
     private BigDecimal price;
     private String image;
     private String category;
-    private String color;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long storeId;

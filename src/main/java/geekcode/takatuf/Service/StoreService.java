@@ -4,15 +4,24 @@ import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
 import jakarta.persistence.EntityNotFoundException;
 import geekcode.takatuf.Entity.Store;
+import geekcode.takatuf.Entity.StoreReview;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Exception.Types.BadRequestException;
+import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
+import geekcode.takatuf.Repository.StoreRepository;
+import geekcode.takatuf.Repository.StoreReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.*;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +29,7 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final StoreReviewRepository storeReviewRepository;
 
     public StoreResponse createStore(String username, StoreRequest request) {
         if (storeRepository.existsByName(request.getName())) {
@@ -29,12 +39,15 @@ public class StoreService {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new BadRequestException("User not found."));
 
+        String imageUrl = saveImage(request.getImage());
+
         Store store = Store.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .status("ACTIVE")
                 .createdAt(LocalDateTime.now())
                 .owner(user)
+                .imageUrl(imageUrl)
                 .build();
 
         Store savedStore = storeRepository.save(store);
@@ -54,31 +67,63 @@ public class StoreService {
 
         store.setName(request.getName());
         store.setDescription(request.getDescription());
+
         if (request.getStatus() != null) {
             store.setStatus(request.getStatus());
+        }
+
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String imageUrl = saveImage(request.getImage());
+            store.setImageUrl(imageUrl);
         }
 
         Store updatedStore = storeRepository.save(store);
         return mapToResponse(updatedStore);
     }
 
-    public Store getStoreById(Long id) {
-        return storeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Store not found"));
+    private String saveImage(MultipartFile image) {
+        if (image == null || image.isEmpty())
+            return null;
+
+        try {
+            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+            Path uploadPath = Paths.get("uploads/");
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return "/uploads/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image", e);
+        }
     }
 
-    public StoreResponse getStoreByIdResponse(Long id) {
-        return mapToResponse(getStoreById(id));
+    public StoreResponse getStoreById(Long storeId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+        return mapToResponse(store);
     }
 
     private StoreResponse mapToResponse(Store store) {
+        List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());
+        double averageRating = reviews.stream()
+                .mapToInt(StoreReview::getRating)
+                .average()
+                .orElse(0.0);
+
         return StoreResponse.builder()
                 .id(store.getId())
                 .name(store.getName())
                 .description(store.getDescription())
                 .status(store.getStatus())
+                .imageUrl(store.getImageUrl())
                 .ownerEmail(store.getOwner().getEmail())
                 .ownerName(store.getOwner().getName())
+                .averageRating(averageRating)
+                .totalReviews(reviews.size())
                 .build();
     }
 
@@ -98,6 +143,15 @@ public class StoreService {
 
     public List<StoreResponse> getAllStores() {
         List<Store> stores = storeRepository.findAll();
+        return stores.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public List<StoreResponse> getStoresByOwnerEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found."));
+        List<Store> stores = storeRepository.findByOwner_Id(user.getId());
         return stores.stream()
                 .map(this::mapToResponse)
                 .toList();
