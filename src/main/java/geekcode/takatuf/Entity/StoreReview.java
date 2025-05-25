@@ -5,12 +5,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "product_reviews", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "product_id" }))
+@Table(name = "store_reviews")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductReview {
+public class StoreReview {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,10 +21,10 @@ public class ProductReview {
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @JoinColumn(name = "store_id")
+    private Store store;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    private User reviewer;
 }

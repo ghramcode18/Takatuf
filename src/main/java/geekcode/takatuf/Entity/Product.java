@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import geekcode.takatuf.Enums.ProductCategory;
 
 @Entity
 @Table(name = "products")
@@ -23,11 +24,13 @@ public class Product {
 
     private String name;
     private String description;
-    private Integer piece;
     private BigDecimal price;
     private String image;
-    private String category;
-    private String color;
+
+    @Enumerated(EnumType.STRING)
+    private ProductCategory category;
+
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     @ManyToOne
