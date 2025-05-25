@@ -29,8 +29,10 @@ public class Store {
     private String description;
     private String status;
     private LocalDateTime createdAt;
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @OneToMany(mappedBy = "store")
-
     private List<Product> products;
+
 }

@@ -5,6 +5,7 @@ import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.OrderService;
 import geekcode.takatuf.dto.order.PlaceOrderRequest;
 import geekcode.takatuf.dto.order.OrderResponse;
+import geekcode.takatuf.dto.order.CustomOrderDecisionRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,17 +20,19 @@ public class OrderController {
     private final OrderService orderService;
     private final UserRepository userRepository;
 
+    private Long extractUserId(UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return user.getId();
+    }
+
     @PostMapping("/place")
     public ResponseEntity<OrderResponse> placeOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody PlaceOrderRequest orderRequest) {
 
-        String email = userDetails.getUsername();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Long userId = user.getId();
-
+        Long userId = extractUserId(userDetails);
         OrderResponse response = orderService.placeOrder(userId, orderRequest);
         return ResponseEntity.ok(response);
     }
@@ -39,19 +42,39 @@ public class OrderController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId) {
 
-        String email = userDetails.getUsername();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Long userId = user.getId();
-
+        Long userId = extractUserId(userDetails);
         orderService.cancelOrder(userId, orderId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/tracking/{orderId}")
-    public ResponseEntity<OrderResponse> trackOrder(@PathVariable Long orderId) {
+    public ResponseEntity<OrderResponse> trackOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId) {
+
+        extractUserId(userDetails);
         return ResponseEntity.ok(orderService.trackOrder(orderId));
+    }
+
+    @PostMapping("/custom/place")
+    public ResponseEntity<OrderResponse> placeCustomOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody PlaceOrderRequest request) {
+
+        Long userId = extractUserId(userDetails);
+        OrderResponse response = orderService.placeCustomOrder(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/custom/decide/{orderId}")
+    public ResponseEntity<OrderResponse> decideCustomOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId,
+            @RequestBody CustomOrderDecisionRequest request) {
+
+        Long sellerId = extractUserId(userDetails);
+        OrderResponse response = orderService.decideCustomOrder(sellerId, orderId, request);
+        return ResponseEntity.ok(response);
     }
 
 }

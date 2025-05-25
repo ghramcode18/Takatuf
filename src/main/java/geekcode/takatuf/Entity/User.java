@@ -38,6 +38,8 @@ public class User {
     private String phoneNumber;
     @Enumerated(EnumType.STRING) // Store as enum value
     private UserType type;
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -74,15 +76,24 @@ public class User {
     @OneToMany(mappedBy = "receiver")
     private List<Message> receivedMessages;
 
-    // One-to-Many with Reviews
     @OneToMany(mappedBy = "user")
-    private List<Review> reviews;
+    private List<ProductReview> productReviews;
+
+    // One-to-Many with SellerReviews
+    @OneToMany(mappedBy = "reviewer")
+    private List<SellerReview> writtenSellerReviews;
+
+    @OneToMany(mappedBy = "seller")
+    private List<SellerReview> receivedSellerReviews;
+    // One-to-Many with stores
+    @OneToMany(mappedBy = "owner")
+    private List<Store> stores;
 
     // One-to-Many with Complaints
     @OneToMany(mappedBy = "user")
     private List<Complaint> complaints;
 
-    // One-to-Many with Notifications
+    // One-to-Many with Notifications0
     @OneToMany(mappedBy = "user")
     private List<Notification> notifications;
 

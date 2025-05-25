@@ -20,7 +20,7 @@ public class Complaint {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "order_id", insertable = false, updatable = false)
+    @JoinColumn(name = "order_id")
     private Order order;
 
     private String description;
@@ -28,6 +28,6 @@ public class Complaint {
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 }
