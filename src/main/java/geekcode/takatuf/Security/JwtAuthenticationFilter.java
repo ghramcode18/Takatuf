@@ -25,21 +25,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
-        String token = getJwtFromRequest(request);
-
-        if (token != null && jwtService.isTokenValid(token)) {
-            String username = jwtService.extractUsername(token);
-
-            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-
-            Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
-                    userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            
+        try {
+            String token = getJwtFromRequest(request);
+        
+            if (token != null && jwtService.isTokenValid(token)) {
+                String username = jwtService.extractUsername(token);
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+                Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
+                        userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        
+            filterChain.doFilter(request, response);
+        } catch (Exception ex) {
+            ex.printStackTrace(); // تطبع الخطأ في الـ console
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+            response.setContentType("application/json");
+            response.getWriter().write("{ \"error\": \"" + ex.getMessage() + "\" }");
         }
-
-        filterChain.doFilter(request, response);
     }
+
 
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
