@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
+import geekcode.takatuf.dto.*;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -64,7 +64,7 @@ public class ProductService {
                 product.setPrice(BigDecimal.valueOf(price));
                 product.setCategory(category);
                 if (imageFile != null && !imageFile.isEmpty()) {
-                        product.setImage(saveImage(imageFile)); // Stub — replace with your logic
+                        product.setImage(saveImage(imageFile));
                 }
                 product.setUpdatedAt(LocalDateTime.now());
 
@@ -79,7 +79,7 @@ public class ProductService {
                 return buildProductResponse(product);
         }
 
-        public Page<ProductResponse> getProductsByStoreId(Long storeId, int page, int perPage,
+        public PaginatedResponse<ProductResponse> getProductsByStoreId(Long storeId, int page, int perPage,
                         String q, String sort, String sortDir) {
                 Store store = storeRepository.findById(storeId)
                                 .orElseThrow(() -> new BadRequestException("Store not found"));
@@ -87,7 +87,7 @@ public class ProductService {
                 try {
                         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC
                                         : Sort.Direction.ASC;
-                        Pageable pageable = PageRequest.of(page, perPage, Sort.by(direction, sort));
+                        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
                         Page<Product> products;
                         if (q != null && !q.trim().isEmpty()) {
@@ -97,7 +97,10 @@ public class ProductService {
                                 products = productRepository.findByStoreId(storeId, pageable);
                         }
 
-                        return products.map(this::buildProductResponse);
+                        List<ProductResponse> data = products.map(this::buildProductResponse).getContent();
+                        long total = products.getTotalElements();
+
+                        return new PaginatedResponse<>(data, total, page, perPage);
 
                 } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Invalid sort field: " + sort);
