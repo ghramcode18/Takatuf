@@ -5,6 +5,7 @@ import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.OrderService;
 import geekcode.takatuf.dto.order.PlaceOrderRequest;
 import geekcode.takatuf.dto.order.OrderResponse;
+import geekcode.takatuf.dto.MessageResponse;
 import geekcode.takatuf.dto.order.CustomOrderDecisionRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -38,13 +39,13 @@ public class OrderController {
     }
 
     @PostMapping("/cancel/{orderId}")
-    public ResponseEntity<Void> cancelOrder(
+    public ResponseEntity<MessageResponse> cancelOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId) {
 
         Long userId = extractUserId(userDetails);
         orderService.cancelOrder(userId, orderId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new MessageResponse("Order cancelled successfully"));
     }
 
     @GetMapping("/tracking/{orderId}")
@@ -67,14 +68,14 @@ public class OrderController {
     }
 
     @PostMapping("/custom/decide/{orderId}")
-    public ResponseEntity<OrderResponse> decideCustomOrder(
+    public ResponseEntity<MessageResponse> decideCustomOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId,
             @RequestBody CustomOrderDecisionRequest request) {
 
         Long sellerId = extractUserId(userDetails);
-        OrderResponse response = orderService.decideCustomOrder(sellerId, orderId, request);
-        return ResponseEntity.ok(response);
+        orderService.decideCustomOrder(sellerId, orderId, request);
+        return ResponseEntity.ok(new MessageResponse("Custom order decision processed"));
     }
 
 }

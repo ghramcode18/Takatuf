@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import geekcode.takatuf.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class ProductController {
     }
 
     @GetMapping("/store/{storeId}/products")
-    public ResponseEntity<Page<ProductResponse>> getProducts(
+    public ResponseEntity<PaginatedResponse<ProductResponse>> getProducts(
             @PathVariable Long storeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(name = "per_page", defaultValue = "10") int perPage,
@@ -94,12 +95,13 @@ public class ProductController {
             return ResponseEntity.status(401).build();
         }
 
-        Page<ProductResponse> result = productService.getProductsByStoreId(storeId, page, perPage, q, sort, sort_dir);
+        PaginatedResponse<ProductResponse> result = productService.getProductsByStoreId(storeId, page, perPage, q, sort,
+                sort_dir);
         return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteProduct(
+    public ResponseEntity<MessageResponse> deleteProduct(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -109,7 +111,7 @@ public class ProductController {
 
         productService.deleteProduct(id, userDetails.getUsername());
 
-        return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
+        return ResponseEntity.ok(new MessageResponse("Product deleted successfully"));
     }
 
     @GetMapping("/categories")
