@@ -1,5 +1,6 @@
 package geekcode.takatuf.Controller;
 
+import geekcode.takatuf.dto.MessageResponse;
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
 import geekcode.takatuf.Service.StoreService;
@@ -80,15 +81,16 @@ public class StoreController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteStore(
+    public ResponseEntity<MessageResponse> deleteStore(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
 
         storeService.deleteStore(id, userDetails.getUsername());
-        return ResponseEntity.ok().body("Store deleted successfully.");
+        return ResponseEntity.ok(new MessageResponse("Store deleted successfully."));
     }
 
     @GetMapping("/all")
