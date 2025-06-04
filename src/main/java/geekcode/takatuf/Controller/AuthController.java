@@ -3,6 +3,7 @@ package geekcode.takatuf.Controller;
 import geekcode.takatuf.Entity.RefreshTokenRequest;
 import geekcode.takatuf.Security.JwtService;
 import geekcode.takatuf.Service.AuthService;
+import geekcode.takatuf.dto.MessageResponse;
 import geekcode.takatuf.dto.auth.AuthResponse;
 import geekcode.takatuf.dto.auth.EmailRequest;
 import geekcode.takatuf.dto.auth.LoginRequest;
@@ -24,9 +25,9 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<MessageResponse> register(@RequestBody RegisterRequest request) {
         authService.register(request);
-        return ResponseEntity.ok("The User Register Successfully");
+        return ResponseEntity.ok(new MessageResponse("The User Register Successfully"));
     }
 
     @PostMapping("/login")
@@ -36,31 +37,31 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<MessageResponse> logout(@RequestHeader("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
         String email = jwtUtil.extractEmail(token);
         authService.logout(email);
-        return ResponseEntity.ok("Logout successfully");
+        return ResponseEntity.ok(new MessageResponse("Logout successfully"));
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody EmailRequest request) {
+    public ResponseEntity<MessageResponse> forgotPassword(@RequestBody EmailRequest request) {
         authService.forgotPassword(request.getEmail());
-        return ResponseEntity.ok("OTP has been sent to your email.");
+        return ResponseEntity.ok(new MessageResponse("OTP has been sent to your email."));
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestBody OtpVerificationRequest request) {
+    public ResponseEntity<MessageResponse> verifyOtp(@RequestBody OtpVerificationRequest request) {
         authService.verifyOtp(request.getOtp());
-        return ResponseEntity.ok("OTP verified");
+        return ResponseEntity.ok(new MessageResponse("OTP verified"));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<MessageResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.getNewPassword());
-        return ResponseEntity.ok("Password reset successfully");
+        return ResponseEntity.ok(new MessageResponse("Password reset successfully"));
     }
 
     @PostMapping("/refresh-token")
