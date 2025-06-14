@@ -1,5 +1,6 @@
 package geekcode.takatuf.Controller;
 
+import geekcode.takatuf.dto.MessageResponse;
 import geekcode.takatuf.dto.user.UpdateUserRequest;
 import geekcode.takatuf.Service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserResponse> updateUser(
+    public ResponseEntity<MessageResponse> updateUser(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "email", required = false) String email,
@@ -47,9 +48,8 @@ public class UserController {
         }
 
         Long userId = userService.findUserIdByEmail(userDetails.getUsername());
-        UserResponse response = userService.updateUser(userId, updateRequest);
+        userService.updateUser(userId, updateRequest);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponse("User updated successfully."));
     }
-
 }
