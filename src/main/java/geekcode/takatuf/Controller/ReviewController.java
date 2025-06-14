@@ -3,7 +3,6 @@ package geekcode.takatuf.Controller;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Service.ReviewService;
 import geekcode.takatuf.Repository.UserRepository;
-import geekcode.takatuf.dto.MessageResponse;
 import geekcode.takatuf.dto.review.*;
 
 import lombok.RequiredArgsConstructor;
@@ -24,33 +23,23 @@ public class ReviewController {
     private final UserRepository userRepository;
 
     @PostMapping("/product")
-    public ResponseEntity<MessageResponse> addProductReview(
+    public ResponseEntity<Void> addProductReview(
             @RequestBody ProductReviewRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = getAuthenticatedUser(userDetails);
         reviewService.addProductReview(user.getId(), request);
-        return ResponseEntity.ok(new MessageResponse("Product review added successfully"));
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/seller")
-    public ResponseEntity<MessageResponse> addSellerReview(
+    public ResponseEntity<Void> addSellerReview(
             @RequestBody SellerReviewRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = getAuthenticatedUser(userDetails);
         reviewService.addSellerReview(user.getId(), request);
-        return ResponseEntity.ok(new MessageResponse("Seller review added successfully"));
-    }
-
-    @PostMapping("/store")
-    public ResponseEntity<MessageResponse> addStoreReview(
-            @RequestBody StoreReviewRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        User user = getAuthenticatedUser(userDetails);
-        reviewService.addStoreReview(user.getId(), request);
-        return ResponseEntity.ok(new MessageResponse("Store review added successfully"));
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/seller/{sellerId}")
@@ -70,15 +59,6 @@ public class ReviewController {
         getAuthenticatedUser(userDetails);
 
         return ResponseEntity.ok(reviewService.getProductReviews(productId));
-    }
-
-    @GetMapping("/store/{storeId}")
-    public ResponseEntity<List<StoreReviewResponse>> getStoreReviews(
-            @PathVariable Long storeId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        getAuthenticatedUser(userDetails);
-        return ResponseEntity.ok(reviewService.getStoreReviews(storeId));
     }
 
     @GetMapping("/products/{productId}/summary")
@@ -106,6 +86,25 @@ public class ReviewController {
 
         return userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+    }
+
+    @PostMapping("/store")
+    public ResponseEntity<Void> addStoreReview(
+            @RequestBody StoreReviewRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = getAuthenticatedUser(userDetails);
+        reviewService.addStoreReview(user.getId(), request);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/store/{storeId}")
+    public ResponseEntity<List<StoreReviewResponse>> getStoreReviews(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        getAuthenticatedUser(userDetails);
+        return ResponseEntity.ok(reviewService.getStoreReviews(storeId));
     }
 
     @GetMapping("/stores/{storeId}/summary")

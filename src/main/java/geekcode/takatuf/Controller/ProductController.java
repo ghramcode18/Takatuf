@@ -101,7 +101,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<MessageResponse> deleteProduct(
+    public ResponseEntity<?> deleteProduct(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -111,7 +111,7 @@ public class ProductController {
 
         productService.deleteProduct(id, userDetails.getUsername());
 
-        return ResponseEntity.ok(new MessageResponse("Product deleted successfully"));
+        return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
     }
 
     @GetMapping("/categories")
