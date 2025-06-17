@@ -1,5 +1,6 @@
 package geekcode.takatuf.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,5 +36,6 @@ public class Product {
     private LocalDateTime updatedAt;
     @ManyToOne
     @JoinColumn(name = "store_id")
+    @JsonIgnoreProperties
     private Store store;
 }
