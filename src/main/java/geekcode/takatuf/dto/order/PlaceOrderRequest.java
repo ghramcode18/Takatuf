@@ -11,15 +11,11 @@ import geekcode.takatuf.Enums.OrderType;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Setter
+@Getter
 public class PlaceOrderRequest {
-    @NotNull(message = "Store ID is required")
-    private Long storeId;
 
     private List<@Valid OrderItemRequest> items;
-
-    private String paymentMethod;
-
-    private String address;
 
     @NotNull
     private OrderType orderType;
