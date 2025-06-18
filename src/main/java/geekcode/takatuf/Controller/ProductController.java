@@ -17,9 +17,6 @@ import java.util.List;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import geekcode.takatuf.dto.*;
-import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.*;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/product")
@@ -52,10 +49,10 @@ public class ProductController {
     @PostMapping("/update/{productId}")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable Long productId,
-            @RequestParam("name") String name,
-            @RequestParam("description") String description,
-            @RequestParam("price") double price,
-            @RequestParam("category") ProductCategory category,
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "description") String description,
+            @RequestParam(value = "price", required = false) Double price,
+            @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -63,8 +60,9 @@ public class ProductController {
             return ResponseEntity.status(401).build();
         }
 
-        ProductResponse response = productService.updateProduct(productId, name, description, price, category, image,
-                userDetails.getUsername());
+        ProductResponse response = productService.updateProduct(
+                productId, name, description, price, category, image, userDetails.getUsername());
+
         return ResponseEntity.ok(response);
     }
 
