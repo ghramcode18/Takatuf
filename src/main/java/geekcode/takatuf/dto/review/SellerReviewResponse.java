@@ -13,5 +13,6 @@ public class SellerReviewResponse {
     private Integer rating;
     private String comment;
     private String reviewerName;
+    private String reviewerImage;
     private LocalDateTime createdAt;
 }
