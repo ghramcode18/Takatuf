@@ -1,6 +1,8 @@
 package geekcode.takatuf.Service;
 
 import geekcode.takatuf.Entity.Product;
+import geekcode.takatuf.Entity.ProductReview;
+import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Entity.Store;
 import geekcode.takatuf.Enums.ProductCategory;
 import geekcode.takatuf.Exception.Types.BadRequestException;
@@ -119,6 +121,19 @@ public class ProductService {
         }
 
         public ProductResponse buildProductResponse(Product product) {
+                Store store = product.getStore();
+                User owner = store.getOwner();
+                String sellerImage = owner.getProfileImageUrl();
+
+                List<ProductReview> reviews = product.getProductReviews();
+                double avgRating = reviews == null || reviews.isEmpty()
+                                ? 0.0
+                                : reviews.stream()
+                                                .filter(r -> r.getRating() != null)
+                                                .mapToDouble(ProductReview::getRating)
+                                                .average()
+                                                .orElse(0.0);
+
                 return ProductResponse.builder()
                                 .id(product.getId())
                                 .name(product.getName())
@@ -128,8 +143,15 @@ public class ProductService {
                                 .category(product.getCategory().name())
                                 .createdAt(product.getCreatedAt())
                                 .updatedAt(product.getUpdatedAt())
-                                .storeId(product.getStore().getId())
-                                .storeName(product.getStore().getName())
+
+                                .storeId(store.getId())
+                                .storeName(store.getName())
+                                .storeImage(store.getImageUrl())
+
+                                .sellerName(owner.getName())
+                                .sellerImage(sellerImage)
+
+                                .averageRating(avgRating)
                                 .build();
 
         }
