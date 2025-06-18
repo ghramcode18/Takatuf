@@ -86,4 +86,9 @@ public class UserService {
                 .orElseThrow(() -> new BadRequestException("User not found"))
                 .getId();
     }
+
+    public User findUserId(Long id) {
+        User user = userRepository.findById(id).get();
+        return user;
+    }
 }
