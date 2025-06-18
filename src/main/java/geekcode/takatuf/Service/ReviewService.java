@@ -106,6 +106,7 @@ public class ReviewService {
                                                 .rating(r.getRating())
                                                 .comment(r.getComment())
                                                 .reviewerName(r.getReviewer().getName())
+                                                .reviewerImage(r.getReviewer().getProfileImageUrl())
                                                 .createdAt(r.getCreatedAt())
                                                 .build())
                                 .collect(Collectors.toList());
@@ -153,12 +154,14 @@ public class ReviewService {
         }
 
         private ProductReviewResponse buildReviewResponse(ProductReview r) {
+                User user = r.getUser();
                 String userName = (r.getUser() != null) ? r.getUser().getName() : "User not found";
                 return ProductReviewResponse.builder()
                                 .id(r.getId())
                                 .rating(r.getRating())
                                 .comment(r.getComment())
                                 .userName(userName)
+                                .userImage(user != null ? user.getProfileImageUrl() : null)
                                 .createdAt(r.getCreatedAt())
                                 .build();
         }
@@ -169,29 +172,35 @@ public class ReviewService {
 
                 List<SellerReview> reviews = sellerReviewRepository.findBySeller_Id(sellerId);
 
-                double average = reviews.stream()
+                List<SellerReview> validReviews = reviews.stream()
+                                .filter(r -> r.getRating() != null)
+                                .toList();
+
+                double average = validReviews.stream()
                                 .mapToInt(SellerReview::getRating)
                                 .average()
                                 .orElse(0.0);
 
-                List<SellerReviewResponse> responses = reviews.stream()
+                List<SellerReviewResponse> responses = validReviews.stream()
                                 .map(this::buildReviewResponse)
                                 .toList();
 
                 return SellerReviewSummary.builder()
                                 .averageRating(average)
-                                .totalReviews(reviews.size())
+                                .totalReviews(validReviews.size())
                                 .ratedReviews(responses)
                                 .build();
         }
 
         private SellerReviewResponse buildReviewResponse(SellerReview r) {
+                User reviewer = r.getReviewer();
                 String reviewerName = (r.getReviewer() != null) ? r.getReviewer().getName() : "User not found";
                 return SellerReviewResponse.builder()
                                 .id(r.getId())
                                 .rating(r.getRating())
                                 .comment(r.getComment())
                                 .reviewerName(reviewerName)
+                                .reviewerImage(reviewer != null ? reviewer.getProfileImageUrl() : null)
                                 .createdAt(r.getCreatedAt())
                                 .build();
         }
@@ -238,6 +247,7 @@ public class ReviewService {
                                                 .rating(r.getRating())
                                                 .comment(r.getComment())
                                                 .reviewerName(r.getReviewer().getName())
+                                                .reviewerImage(r.getReviewer().getProfileImageUrl())
                                                 .createdAt(r.getCreatedAt())
                                                 .build())
                                 .collect(Collectors.toList());
@@ -257,6 +267,7 @@ public class ReviewService {
                                                 .rating(r.getRating())
                                                 .comment(r.getComment())
                                                 .reviewerName(r.getReviewer().getName())
+                                                .reviewerImage(r.getReviewer().getProfileImageUrl())
                                                 .createdAt(r.getCreatedAt())
                                                 .build())
                                 .collect(Collectors.toList());

@@ -1,5 +1,8 @@
 package geekcode.takatuf.dto.order;
 
+import geekcode.takatuf.Enums.PaymentMethod;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,10 +18,14 @@ import geekcode.takatuf.Enums.TrackingInfo;
 @Builder
 public class OrderResponse {
     private Long orderId;
+    @Enumerated(EnumType.STRING)
     private OrderStatus status;
+    @Enumerated(EnumType.STRING)
     private TrackingInfo trackingInfo;
     private BigDecimal totalPrice;
-    private String paymentMethod;
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod;
+    @Enumerated(EnumType.STRING)
     private OrderType orderType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
