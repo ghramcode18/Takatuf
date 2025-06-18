@@ -65,10 +65,20 @@ public class StoreService {
             throw new UnauthorizedException("You are not the owner of this store.");
         }
 
-        store.setName(request.getName());
-        store.setDescription(request.getDescription());
+        if (request.getName() != null && !request.getName().isBlank()) {
+            boolean nameExists = storeRepository.existsByName(request.getName()) &&
+                    !request.getName().equals(store.getName());
+            if (nameExists) {
+                throw new BadRequestException("Another store with the same name already exists.");
+            }
+            store.setName(request.getName());
+        }
 
-        if (request.getStatus() != null) {
+        if (request.getDescription() != null && !request.getDescription().isBlank()) {
+            store.setDescription(request.getDescription());
+        }
+
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
             store.setStatus(request.getStatus());
         }
 

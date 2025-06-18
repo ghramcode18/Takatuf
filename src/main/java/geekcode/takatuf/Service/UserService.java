@@ -37,18 +37,26 @@ public class UserService {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
-        if (updateRequest.getEmail() != null && !updateRequest.getEmail().equals(existingUser.getEmail())) {
+        if (updateRequest.getEmail() != null && !updateRequest.getEmail().isBlank()
+                && !updateRequest.getEmail().equals(existingUser.getEmail())) {
             if (userRepository.existsByEmail(updateRequest.getEmail())) {
                 throw new BadRequestException("Email already in use");
             }
             existingUser.setEmail(updateRequest.getEmail());
         }
 
-        if (updateRequest.getName() != null) {
+        if (updateRequest.getName() != null && !updateRequest.getName().isBlank()) {
+            if (!updateRequest.getName().equals(existingUser.getName()) &&
+                    userRepository.existsByName(updateRequest.getName())) {
+                throw new BadRequestException("Name already in use");
+            }
             existingUser.setName(updateRequest.getName());
         }
-
-        if (updateRequest.getPhoneNumber() != null) {
+        if (updateRequest.getPhoneNumber() != null && !updateRequest.getPhoneNumber().isBlank()) {
+            if (!updateRequest.getPhoneNumber().equals(existingUser.getPhoneNumber()) &&
+                    userRepository.existsByPhoneNumber(updateRequest.getPhoneNumber())) {
+                throw new BadRequestException("Phone number already in use");
+            }
             existingUser.setPhoneNumber(updateRequest.getPhoneNumber());
         }
 
@@ -56,7 +64,7 @@ public class UserService {
             existingUser.setPassword(passwordEncoder.encode(updateRequest.getPassword()));
         }
 
-        if (updateRequest.getProfileImageUrl() != null) {
+        if (updateRequest.getProfileImageUrl() != null && !updateRequest.getProfileImageUrl().isBlank()) {
             existingUser.setProfileImageUrl(updateRequest.getProfileImageUrl());
         }
 
@@ -87,8 +95,16 @@ public class UserService {
                 .getId();
     }
 
+
     public User findUserId(Long id) {
         User user = userRepository.findById(id).get();
         return user;
+    }
+
+    public UserResponse getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        return convertToUserResponse(user);
     }
 }

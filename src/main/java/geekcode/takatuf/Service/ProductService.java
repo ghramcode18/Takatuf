@@ -1,6 +1,8 @@
 package geekcode.takatuf.Service;
 
 import geekcode.takatuf.Entity.Product;
+import geekcode.takatuf.Entity.ProductReview;
+import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Entity.Store;
 import geekcode.takatuf.Enums.ProductCategory;
 import geekcode.takatuf.Exception.Types.BadRequestException;
@@ -33,6 +35,9 @@ public class ProductService {
                 if (!store.getOwner().getEmail().equals(currentUsername)) {
                         throw new BadRequestException("You are not authorized to add products to this store");
                 }
+                if (productRepository.existsByNameAndStoreId(name, storeId)) {
+                        throw new BadRequestException("A product with the same name already exists in this store.");
+                }
 
                 String imageUrl = saveImage(imageFile);
 
@@ -51,24 +56,48 @@ public class ProductService {
                 return buildProductResponse(savedProduct);
         }
 
-        public ProductResponse updateProduct(Long productId, String name, String description, double price,
-                        ProductCategory category, MultipartFile imageFile, String currentUsername) {
+        public ProductResponse updateProduct(Long productId, String name, String description, Double price,
+                        String category, MultipartFile imageFile, String currentUsername) {
 
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new BadRequestException("Product not found"));
+
                 if (!product.getStore().getOwner().getEmail().equals(currentUsername)) {
                         throw new BadRequestException("You are not authorized to update this product");
                 }
-                product.setName(name);
-                product.setDescription(description);
-                product.setPrice(BigDecimal.valueOf(price));
-                product.setCategory(category);
+
+                if (name != null && !name.isBlank() && !product.getName().equals(name)) {
+                        if (productRepository.existsByNameAndStoreId(name, product.getStore().getId())) {
+                                throw new BadRequestException(
+                                                "Another product with this name already exists in this store.");
+                        }
+                        product.setName(name);
+                }
+
+                if (description != null && !description.isBlank()) {
+                        product.setDescription(description);
+                }
+
+                if (price != null && price > 0) {
+                        product.setPrice(BigDecimal.valueOf(price));
+                }
+
+                if (category != null && !category.isBlank()) {
+                        try {
+                                ProductCategory productCategory = ProductCategory.valueOf(category.toUpperCase());
+                                product.setCategory(productCategory);
+                        } catch (IllegalArgumentException e) {
+                                throw new BadRequestException("Invalid category value: " + category);
+                        }
+                }
+
                 if (imageFile != null && !imageFile.isEmpty()) {
                         product.setImage(saveImage(imageFile));
                 }
-                product.setUpdatedAt(LocalDateTime.now());
 
+                product.setUpdatedAt(LocalDateTime.now());
                 Product updatedProduct = productRepository.save(product);
+
                 return buildProductResponse(updatedProduct);
         }
 
@@ -119,6 +148,19 @@ public class ProductService {
         }
 
         public ProductResponse buildProductResponse(Product product) {
+                Store store = product.getStore();
+                User owner = store.getOwner();
+                String sellerImage = owner.getProfileImageUrl();
+
+                List<ProductReview> reviews = product.getProductReviews();
+                double avgRating = reviews == null || reviews.isEmpty()
+                                ? 0.0
+                                : reviews.stream()
+                                                .filter(r -> r.getRating() != null)
+                                                .mapToDouble(ProductReview::getRating)
+                                                .average()
+                                                .orElse(0.0);
+
                 return ProductResponse.builder()
                                 .id(product.getId())
                                 .name(product.getName())
@@ -128,8 +170,15 @@ public class ProductService {
                                 .category(product.getCategory().name())
                                 .createdAt(product.getCreatedAt())
                                 .updatedAt(product.getUpdatedAt())
-                                .storeId(product.getStore().getId())
-                                .storeName(product.getStore().getName())
+
+                                .storeId(store.getId())
+                                .storeName(store.getName())
+                                .storeImage(store.getImageUrl())
+
+                                .sellerName(owner.getName())
+                                .sellerImage(sellerImage)
+
+                                .averageRating(avgRating)
                                 .build();
 
         }
