@@ -52,4 +52,17 @@ public class UserController {
 
         return ResponseEntity.ok(new MessageResponse("User updated successfully."));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Long userId = userService.findUserIdByEmail(userDetails.getUsername());
+        UserResponse user = userService.getUserById(userId);
+
+        return ResponseEntity.ok(user);
+    }
+
 }

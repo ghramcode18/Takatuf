@@ -19,4 +19,8 @@ public class ProductResponse {
     private LocalDateTime updatedAt;
     private Long storeId;
     private String storeName;
+    private String storeImage;
+    private String sellerName;
+    private String sellerImage;
+    private Double averageRating;
 }
