@@ -1,8 +1,9 @@
 package geekcode.takatuf.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-
+import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import geekcode.takatuf.Enums.ProductCategory;
@@ -27,13 +28,19 @@ public class Product {
     private BigDecimal price;
     private String image;
 
+    private Long Quantity;
+
     @Enumerated(EnumType.STRING)
     private ProductCategory category;
 
-
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "product")
+    private List<ProductReview> productReviews;
+
     @ManyToOne
     @JoinColumn(name = "store_id")
+    @JsonIgnoreProperties
     private Store store;
 }
