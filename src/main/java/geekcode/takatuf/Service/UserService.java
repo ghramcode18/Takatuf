@@ -95,11 +95,16 @@ public class UserService {
                 .getId();
     }
 
+
+    public User findUserId(Long id) {
+        User user = userRepository.findById(id).get();
+        return user;
+    }
+
     public UserResponse getUserById(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
         return convertToUserResponse(user);
     }
-
 }

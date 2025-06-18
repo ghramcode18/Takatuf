@@ -1,5 +1,6 @@
 package geekcode.takatuf.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -27,6 +28,8 @@ public class Product {
     private BigDecimal price;
     private String image;
 
+    private Long Quantity;
+
     @Enumerated(EnumType.STRING)
     private ProductCategory category;
 
@@ -38,5 +41,6 @@ public class Product {
 
     @ManyToOne
     @JoinColumn(name = "store_id")
+    @JsonIgnoreProperties
     private Store store;
 }
