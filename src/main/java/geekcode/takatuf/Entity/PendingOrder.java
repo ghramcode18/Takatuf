@@ -3,6 +3,7 @@ import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import geekcode.takatuf.Enums.OrderStatus;
+import geekcode.takatuf.Enums.OrderType;
 import geekcode.takatuf.Enums.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,8 +37,18 @@ public class PendingOrder {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_type")
+    private OrderType orderType;
+
+
     private BigDecimal totalPrice;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @ManyToOne
+    @JsonIgnore
+    private Product product; // هذا المنتج فيه .getStore()
+
 }

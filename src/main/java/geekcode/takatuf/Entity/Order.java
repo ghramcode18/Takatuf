@@ -3,6 +3,7 @@ package geekcode.takatuf.Entity;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import geekcode.takatuf.Enums.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -25,9 +26,11 @@ public class Order {
     private Long id;
 
     private BigDecimal totalPrice;
+
     private BigDecimal proposedPrice;
 
-    private String paymentMethod;
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod;
 
     private String category;
     private String customizationDetails;

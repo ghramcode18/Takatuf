@@ -5,11 +5,8 @@ import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Enums.PaymentMethod;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.OrderService;
-import geekcode.takatuf.dto.order.AddressRequest;
-import geekcode.takatuf.dto.order.PlaceOrderRequest;
-import geekcode.takatuf.dto.order.OrderResponse;
+import geekcode.takatuf.dto.order.*;
 import geekcode.takatuf.dto.MessageResponse;
-import geekcode.takatuf.dto.order.CustomOrderDecisionRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.nio.file.LinkOption;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -114,15 +112,25 @@ public class OrderController {
         orderService.updatePendingOrderPayment(userId, pendingOrderId,paymentMethod);
         return ResponseEntity.ok(pendingOrderId );
     }
-//    @PostMapping("/pending-order/confirm")
-//    public ResponseEntity<OrderResponse> confirmPendingOrder(
-//            @AuthenticationPrincipal UserDetails userDetails,
-//            @RequestParam Long pendingOrderId
-//    ) {
-//        Long userId = extractUserId(userDetails);
-//        OrderResponse response = orderService.confirmPendingOrder(userId,pendingOrderId);
-//         return ResponseEntity.ok(response );
-//    }
+
+    @PostMapping("/pending-order/review")
+    public ResponseEntity<PendingOrderReviewResponse> getPendingOrderReview(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long pendingOrderId
+    ) {
+        Long userId = extractUserId(userDetails);
+        PendingOrderReviewResponse response = orderService.getPendingOrderReview(userId,pendingOrderId);
+        return ResponseEntity.ok(response );
+    }
+    @PostMapping("/pending-order/confirm")
+    public ResponseEntity<List<OrderResponse>> confirmPendingOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long pendingOrderId
+    ) {
+        Long userId = extractUserId(userDetails);
+        List<OrderResponse> response = orderService.confirmPendingOrder(userId,pendingOrderId);
+         return ResponseEntity.ok(response );
+    }
 
 
 }
