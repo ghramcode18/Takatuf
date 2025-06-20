@@ -1,17 +1,14 @@
 package geekcode.takatuf.dto;
 
+import lombok.*;
+
+@Data
+@Builder
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class MessageResponse {
     private String message;
 
-    public MessageResponse(String message) {
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }

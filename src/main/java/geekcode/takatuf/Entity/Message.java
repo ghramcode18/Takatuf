@@ -28,6 +28,11 @@ public class Message {
     private User sender;
     
     @ManyToOne
-    @JoinColumn(name = "receiver_id", insertable = false, updatable = false)
+    @JoinColumn(name = "receiver_id")
     private User receiver;
+
+    @ManyToOne
+    @JoinColumn(name = "chat_id")
+    private Chat chat;
+
 }
