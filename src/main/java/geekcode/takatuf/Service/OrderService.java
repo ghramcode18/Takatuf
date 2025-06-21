@@ -16,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,22 +41,36 @@ public class OrderService {
                         throw new ResourceNotFoundException("Order must contain at least one product");
                 }
 
-                Product firstProduct = productRepository.findById(request.getItems().get(0).getProductId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-                Store store = firstProduct.getStore();
+                Map<Long, Product> productMap = request.getItems().stream()
+                                .map(item -> productRepository.findById(item.getProductId())
+                                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                                "Product not found: " + item.getProductId())))
+                                .collect(Collectors.toMap(Product::getId, p -> p));
 
-                BigDecimal totalPrice = request.getItems().stream()
-                                .map(item -> {
-                                        Product product = productRepository.findById(item.getProductId())
-                                                        .orElseThrow(() -> new ResourceNotFoundException(
-                                                                        "Product not found: " + item.getProductId()));
-                                        return product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-                                })
+                List<OrderItem> allOrderItems = new ArrayList<>();
+
+                for (PlaceOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
+                        Product product = productMap.get(itemRequest.getProductId());
+
+                        OrderItem orderItem = OrderItem.builder()
+                                        .product(product)
+                                        .quantity(itemRequest.getQuantity())
+                                        .price(product.getPrice())
+                                        .address(request.getAddress())
+                                        .orderDate(LocalDateTime.now())
+                                        .status(OrderStatus.PLACED)
+                                        .build();
+
+                        allOrderItems.add(orderItem);
+                }
+
+                BigDecimal totalPrice = allOrderItems.stream()
+                                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 Order order = Order.builder()
                                 .user(user)
-                                .store(store)
+                                .store(null)
                                 .status(OrderStatus.PLACED)
                                 .trackingInfo(TrackingInfo.PROCESSING)
                                 .paymentMethod(request.getPaymentMethod())
@@ -65,40 +82,12 @@ public class OrderService {
 
                 Order savedOrder = orderRepository.save(order);
 
-                List<OrderItem> orderItems = request.getItems().stream().map(itemReq -> {
-                        Product product = productRepository.findById(itemReq.getProductId())
-                                        .orElseThrow(() -> new ResourceNotFoundException(
-                                                        "Product not found: " + itemReq.getProductId()));
+                allOrderItems.forEach(item -> item.setOrder(savedOrder));
+                orderItemRepository.saveAll(allOrderItems);
 
-                        return OrderItem.builder()
-                                        .product(product)
-                                        .quantity(itemReq.getQuantity())
-                                        .price(product.getPrice())
-                                        .address(request.getAddress())
-                                        .orderDate(LocalDateTime.now())
-                                        .status(OrderStatus.PLACED)
-                                        .order(savedOrder)
-                                        .build();
-                }).collect(Collectors.toList());
+                savedOrder.setOrderItems(allOrderItems);
 
-                orderItemRepository.saveAll(orderItems);
-
-                return OrderResponse.builder()
-                                .orderId(savedOrder.getId())
-                                .status(savedOrder.getStatus())
-                                .totalPrice(savedOrder.getTotalPrice())
-                                .paymentMethod(savedOrder.getPaymentMethod())
-                                .trackingInfo(savedOrder.getTrackingInfo())
-                                .orderType(savedOrder.getOrderType())
-                                .createdAt(savedOrder.getCreatedAt())
-                                .updatedAt(savedOrder.getUpdatedAt())
-                                .items(orderItems.stream().map(item -> OrderResponse.OrderItemResponse.builder()
-                                                .productId(item.getProduct().getId())
-                                                .productName(item.getProduct().getName())
-                                                .quantity(item.getQuantity())
-                                                .price(item.getPrice())
-                                                .build()).collect(Collectors.toList()))
-                                .build();
+                return mapToOrderResponse(savedOrder);
         }
 
         @Transactional
@@ -139,26 +128,7 @@ public class OrderService {
                         throw new UnauthorizedException("Unauthorized to view this order");
                 }
 
-                return OrderResponse.builder()
-                                .orderId(order.getId())
-                                .status(order.getStatus())
-                                .trackingInfo(order.getTrackingInfo())
-                                .totalPrice(order.getTotalPrice())
-                                .paymentMethod(order.getPaymentMethod())
-                                .orderType(order.getOrderType())
-                                .createdAt(order.getCreatedAt())
-                                .updatedAt(order.getUpdatedAt())
-                                .items(order.getOrderItems() == null ? List.of()
-                                                : order.getOrderItems().stream()
-                                                                .map(item -> OrderResponse.OrderItemResponse.builder()
-                                                                                .productId(item.getProduct().getId())
-                                                                                .productName(item.getProduct()
-                                                                                                .getName())
-                                                                                .quantity(item.getQuantity())
-                                                                                .price(item.getPrice())
-                                                                                .build())
-                                                                .collect(Collectors.toList()))
-                                .build();
+                return mapToOrderResponse(order);
         }
 
         @Transactional

@@ -51,7 +51,7 @@ public class ProductController {
             @PathVariable Long productId,
             @RequestParam(value = "name") String name,
             @RequestParam(value = "description") String description,
-            @RequestParam(value = "price", required = false) Double price,
+            @RequestParam(value = "price", required = false) BigDecimal price,
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {

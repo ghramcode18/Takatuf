@@ -56,7 +56,7 @@ public class ProductService {
                 return buildProductResponse(savedProduct);
         }
 
-        public ProductResponse updateProduct(Long productId, String name, String description, Double price,
+        public ProductResponse updateProduct(Long productId, String name, String description, BigDecimal price,
                         String category, MultipartFile imageFile, String currentUsername) {
 
                 Product product = productRepository.findById(productId)
@@ -78,8 +78,8 @@ public class ProductService {
                         product.setDescription(description);
                 }
 
-                if (price != null && price > 0) {
-                        product.setPrice(BigDecimal.valueOf(price));
+                if (price != null && price.compareTo(BigDecimal.ZERO) > 0) {
+                        product.setPrice(price);
                 }
 
                 if (category != null && !category.isBlank()) {
@@ -184,7 +184,9 @@ public class ProductService {
         }
 
         private String saveImage(MultipartFile file) {
+
                 return "https://products/images/" + file.getOriginalFilename();
+
         }
 
 }
