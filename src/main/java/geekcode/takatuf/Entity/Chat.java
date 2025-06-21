@@ -29,4 +29,8 @@ public class Chat {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "is_deleted")
+    private boolean deleted = false;
+
 }

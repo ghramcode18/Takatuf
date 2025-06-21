@@ -35,4 +35,14 @@ public class Message {
     @JoinColumn(name = "chat_id")
     private Chat chat;
 
+    @Column(name = "is_deleted")
+    private boolean deleted = false;
+
+    @Column(name = "is_edited")
+    private boolean edited = false;
+
+    private LocalDateTime editedAt;
+
+    private LocalDateTime deletedAt;
+
 }
