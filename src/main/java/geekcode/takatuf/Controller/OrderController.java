@@ -1,20 +1,22 @@
 package geekcode.takatuf.Controller;
 
+import geekcode.takatuf.Entity.PendingOrder;
 import geekcode.takatuf.Entity.User;
+import geekcode.takatuf.Enums.PaymentMethod;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.OrderService;
-import geekcode.takatuf.dto.order.PlaceOrderRequest;
-import geekcode.takatuf.dto.order.OrderResponse;
+import geekcode.takatuf.dto.order.*;
 import geekcode.takatuf.dto.MessageResponse;
-import geekcode.takatuf.dto.order.CustomOrderDecisionRequest;
-import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
+import java.math.BigDecimal;
+import java.nio.file.LinkOption;
 import java.util.List;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -24,28 +26,28 @@ public class OrderController {
     private final OrderService orderService;
     private final UserRepository userRepository;
 
-    private Long getUserIdFromPrincipal(UserDetails userDetails) {
+    private Long extractUserId(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
                 .map(User::getId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
-@PostMapping("/place")
-public ResponseEntity<OrderResponse> placeOrder(
-        @AuthenticationPrincipal UserDetails userDetails,
-        @RequestBody PlaceOrderRequest orderRequest) {
 
-    Long userId = getUserIdFromPrincipal(userDetails);
-    OrderResponse response = orderService.placeOrder(userId, orderRequest);
-    return ResponseEntity.ok(response);
-}
+    @PostMapping("/place")
+    public ResponseEntity<OrderResponse> placeOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody PlaceOrderRequest orderRequest) {
 
+        Long userId = extractUserId(userDetails);
+        OrderResponse response = orderService.placeOrder(userId, orderRequest);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/cancel/{orderId}")
     public ResponseEntity<MessageResponse> cancelOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId) {
 
-        Long userId = getUserIdFromPrincipal(userDetails);
+        Long userId = extractUserId(userDetails);
         orderService.cancelOrder(userId, orderId);
         return ResponseEntity.ok(new MessageResponse("Order cancelled successfully"));
     }
@@ -55,7 +57,7 @@ public ResponseEntity<OrderResponse> placeOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId) {
 
-        getUserIdFromPrincipal(userDetails);
+        extractUserId(userDetails);
         return ResponseEntity.ok(orderService.trackOrder(orderId));
     }
 
@@ -64,7 +66,7 @@ public ResponseEntity<OrderResponse> placeOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody PlaceOrderRequest request) {
 
-        Long userId = getUserIdFromPrincipal(userDetails);
+        Long userId = extractUserId(userDetails);
         OrderResponse response = orderService.placeCustomOrder(userId, request);
         return ResponseEntity.ok(response);
     }
@@ -75,8 +77,56 @@ public ResponseEntity<OrderResponse> placeOrder(
             @PathVariable Long orderId,
             @Valid @RequestBody CustomOrderDecisionRequest request) {
 
-        Long sellerId = getUserIdFromPrincipal(userDetails);
+        Long sellerId = extractUserId(userDetails);
         orderService.decideCustomOrder(sellerId, orderId, request);
         return ResponseEntity.ok(new MessageResponse("Custom order decision processed"));
     }
+
+    @PostMapping("/pending-order")
+    public ResponseEntity<Long> createOrGetPendingOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody PlaceOrderRequest orderReques) {
+        Long userId = extractUserId(userDetails);
+        Long pendingOrderId = orderService.createOrGetPendingOrder(userId, orderReques);
+        return ResponseEntity.ok(pendingOrderId);
+    }
+
+    @PutMapping("/pending-order/address")
+    public ResponseEntity<Long> updatePendingOrderAddress(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long pendingOrderId,
+            @RequestBody AddressRequest addressRequest) {
+        Long userId = extractUserId(userDetails);
+        orderService.updatePendingOrderAddress(userId, pendingOrderId, addressRequest);
+        return ResponseEntity.ok(pendingOrderId);
+    }
+
+    @PutMapping("/pending-order/payment")
+    public ResponseEntity<Long> updatePendingOrderPayment(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long pendingOrderId,
+            @RequestParam PaymentMethod paymentMethod) {
+        Long userId = extractUserId(userDetails);
+        orderService.updatePendingOrderPayment(userId, pendingOrderId, paymentMethod);
+        return ResponseEntity.ok(pendingOrderId);
+    }
+
+    @PostMapping("/pending-order/review")
+    public ResponseEntity<PendingOrderReviewResponse> getPendingOrderReview(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long pendingOrderId) {
+        Long userId = extractUserId(userDetails);
+        PendingOrderReviewResponse response = orderService.getPendingOrderReview(userId, pendingOrderId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/pending-order/confirm")
+    public ResponseEntity<List<OrderResponse>> confirmPendingOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long pendingOrderId) {
+        Long userId = extractUserId(userDetails);
+        List<OrderResponse> response = orderService.confirmPendingOrder(userId, pendingOrderId);
+        return ResponseEntity.ok(response);
+    }
+
 }
