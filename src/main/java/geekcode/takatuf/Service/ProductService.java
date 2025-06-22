@@ -27,7 +27,7 @@ public class ProductService {
         private final StoreRepository storeRepository;
 
         public ProductResponse addProduct(Long storeId, String name, String description, BigDecimal price,
-                        ProductCategory category, MultipartFile imageFile, String currentUsername) {
+                        ProductCategory category, Integer quantity, MultipartFile imageFile, String currentUsername) {
 
                 Store store = storeRepository.findById(storeId)
                                 .orElseThrow(() -> new BadRequestException("Store not found"));
@@ -46,6 +46,7 @@ public class ProductService {
                                 .description(description)
                                 .price(price)
                                 .image(imageUrl)
+                                .quantity(quantity)
                                 .category(category)
                                 .createdAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
@@ -57,7 +58,7 @@ public class ProductService {
         }
 
         public ProductResponse updateProduct(Long productId, String name, String description, BigDecimal price,
-                        String category, MultipartFile imageFile, String currentUsername) {
+                        String category, Integer quantity, MultipartFile imageFile, String currentUsername) {
 
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new BadRequestException("Product not found"));
@@ -80,6 +81,10 @@ public class ProductService {
 
                 if (price != null && price.compareTo(BigDecimal.ZERO) > 0) {
                         product.setPrice(price);
+                }
+
+                if (quantity != null && quantity >= 0) {
+                        product.setQuantity(quantity);
                 }
 
                 if (category != null && !category.isBlank()) {
@@ -167,6 +172,7 @@ public class ProductService {
                                 .description(product.getDescription())
                                 .price(product.getPrice())
                                 .image(product.getImage())
+                                .quantity(product.getQuantity())
                                 .category(product.getCategory().name())
                                 .createdAt(product.getCreatedAt())
                                 .updatedAt(product.getUpdatedAt())

@@ -33,6 +33,7 @@ public class ProductController {
             @RequestParam("description") String description,
             @RequestParam("price") double price,
             @RequestParam("category") ProductCategory category,
+            @RequestParam("quantity") Integer quantity,
             @RequestParam("image") MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -41,7 +42,7 @@ public class ProductController {
         }
 
         ProductResponse response = productService.addProduct(storeId, name, description,
-                BigDecimal.valueOf(price), category, image, userDetails.getUsername());
+                BigDecimal.valueOf(price), category, quantity, image, userDetails.getUsername());
 
         return ResponseEntity.ok(response);
     }
@@ -52,6 +53,7 @@ public class ProductController {
             @RequestParam(value = "name") String name,
             @RequestParam(value = "description") String description,
             @RequestParam(value = "price", required = false) BigDecimal price,
+            @RequestParam(value = "quantity", required = false) Integer quantity,
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -61,7 +63,7 @@ public class ProductController {
         }
 
         ProductResponse response = productService.updateProduct(
-                productId, name, description, price, category, image, userDetails.getUsername());
+                productId, name, description, price, category, quantity, image, userDetails.getUsername());
 
         return ResponseEntity.ok(response);
     }
