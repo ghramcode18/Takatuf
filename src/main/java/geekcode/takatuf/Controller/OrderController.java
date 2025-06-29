@@ -82,6 +82,13 @@ public class OrderController {
         return ResponseEntity.ok(new MessageResponse("Custom order decision processed"));
     }
 
+    @GetMapping("/card")
+    public ResponseEntity<PendingOrderResponse> getPendingOrder(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = extractUserId(userDetails);
+        return ResponseEntity.ok(orderService.getPendingOrder(userId));
+    }
+
+
     @PostMapping("/pending-order")
     public ResponseEntity<Long> createOrGetPendingOrder(
             @AuthenticationPrincipal UserDetails userDetails,

@@ -310,6 +310,41 @@ public class OrderService {
                 return savedOrder.getId();
         }
 
+        public PendingOrderResponse getPendingOrder(Long userId) {
+                PendingOrder order = pendingOrderRepository.findByUserIdAndStatus(userId, OrderStatus.PENDING)
+                        .orElseThrow(() -> new ResourceNotFoundException("No pending order found"));
+
+                List<PendingOrderItem> items = pendingOrderItemRepository.findByPendingOrder(order);
+
+                BigDecimal total = BigDecimal.ZERO;
+
+                List<PendingOrderItemResponse> itemResponses = new ArrayList<>();
+                for (PendingOrderItem item : items) {
+                        Product product = productRepository.findById(item.getProduct().getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + item.getProduct().getId()));
+                        BigDecimal currentPrice = product.getPrice();
+                        BigDecimal itemTotal = currentPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+
+                        item.setPrice(currentPrice);
+                        total = total.add(itemTotal);
+
+                        itemResponses.add(new PendingOrderItemResponse(
+                                product.getId(),
+                                product.getName(),
+                                currentPrice,
+                                item.getQuantity()
+                        ));
+                }
+
+                order.setTotalPrice(total);
+                pendingOrderItemRepository.saveAll(items);
+                pendingOrderRepository.save(order);
+
+                return new PendingOrderResponse(order.getId(), total, itemResponses);
+        }
+
+
+
         @Transactional
         public Long updatePendingOrderAddress(Long userId,Long pendingOrderId, AddressRequest addressRequest) {
                 PendingOrder pendingOrder = pendingOrderRepository.findById(pendingOrderId)
