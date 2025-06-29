@@ -102,18 +102,7 @@ public class StoreController {
         return ResponseEntity.ok(stores);
     }
 
-    @GetMapping("/mystores")
-    public ResponseEntity<List<StoreResponse>> getMyStores(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        List<StoreResponse> myStores = storeService.getStoresByOwnerEmail(userDetails.getUsername());
-        return ResponseEntity.ok(myStores);
-    }
-
-    @GetMapping("/owner/{ownerId}")
+    @GetMapping("/mystores/{ownerId}")
     public ResponseEntity<List<StoreResponse>> getStoresByOwnerId(@PathVariable Long ownerId) {
         List<StoreResponse> stores = storeService.getStoresByOwnerId(ownerId);
         return ResponseEntity.ok(stores);

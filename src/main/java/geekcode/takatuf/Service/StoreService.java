@@ -165,13 +165,6 @@ public class StoreService {
                 .toList();
     }
 
-    public List<StoreResponse> getStoresByOwnerEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadRequestException("User not found."));
-        List<Store> stores = storeRepository.findByOwner_Id(user.getId());
-        return stores.stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
+
 
 }
