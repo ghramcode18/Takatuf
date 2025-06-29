@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import geekcode.takatuf.Repository.ProductRepository;
-import geekcode.takatuf.Repository.UserRepository;
 import org.springframework.web.multipart.MultipartFile;
 
 import org.springframework.web.bind.annotation.*;

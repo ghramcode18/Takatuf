@@ -5,8 +5,6 @@ import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
 import geekcode.takatuf.Service.StoreService;
 import lombok.RequiredArgsConstructor;
-import jakarta.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -115,4 +113,9 @@ public class StoreController {
         return ResponseEntity.ok(myStores);
     }
 
+    @GetMapping("/owner/{ownerId}")
+    public ResponseEntity<List<StoreResponse>> getStoresByOwnerId(@PathVariable Long ownerId) {
+        List<StoreResponse> stores = storeService.getStoresByOwnerId(ownerId);
+        return ResponseEntity.ok(stores);
+    }
 }

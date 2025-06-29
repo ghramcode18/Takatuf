@@ -1,6 +1,5 @@
 package geekcode.takatuf.Controller;
 
-import geekcode.takatuf.Entity.PendingOrder;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Enums.PaymentMethod;
 import geekcode.takatuf.Repository.UserRepository;
@@ -13,8 +12,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
-import java.math.BigDecimal;
-import java.nio.file.LinkOption;
 import java.util.List;
 import jakarta.validation.Valid;
 
