@@ -115,14 +115,17 @@ public class StoreService {
         return mapToResponse(store);
     }
 
-    public List<StoreResponse> getStoresByOwnerId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException("User not found."));
-        List<Store> stores = storeRepository.findByOwner_Id(user.getId());
-        return stores.stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
+   public List<StoreResponse> getStoresByOwner(String username) {
+    User user = userRepository.findByEmail(username)
+            .orElseThrow(() -> new BadRequestException("User not found."));
+
+    List<Store> stores = storeRepository.findByOwner_Id(user.getId());
+
+    return stores.stream()
+            .map(this::mapToResponse)
+            .toList();
+}
+
 
     private StoreResponse mapToResponse(Store store) {
         List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());

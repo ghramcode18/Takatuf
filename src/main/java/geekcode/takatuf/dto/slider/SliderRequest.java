@@ -11,7 +11,7 @@ public class SliderRequest {
     private String targetUrl;
     private String type;
     private boolean active;
-    private int priority;
+    private Integer priority;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 }

@@ -39,15 +39,24 @@ public class SliderService {
         Slider slider = sliderRepository.findById(id)
                 .orElseThrow(() -> new BadRequestException("Slider not found."));
 
-        slider.setTitle(request.getTitle());
-        slider.setDescription(request.getDescription());
-        slider.setImageUrl(request.getImageUrl());
-        slider.setTargetUrl(request.getTargetUrl());
-        slider.setType(request.getType());
-        slider.setActive(request.isActive());
-        slider.setPriority(request.getPriority());
-        slider.setStartDate(request.getStartDate());
-        slider.setEndDate(request.getEndDate());
+        if (request.getTitle() != null)
+            slider.setTitle(request.getTitle());
+        if (request.getDescription() != null)
+            slider.setDescription(request.getDescription());
+        if (request.getImageUrl() != null)
+            slider.setImageUrl(request.getImageUrl());
+        if (request.getTargetUrl() != null)
+            slider.setTargetUrl(request.getTargetUrl());
+        if (request.getType() != null)
+            slider.setType(request.getType());
+        if (request.getPriority() != null)
+            slider.setPriority(request.getPriority());
+        if (request.getStartDate() != null)
+            slider.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null)
+            slider.setEndDate(request.getEndDate());
+
+        slider.setActive(request.isActive()); 
 
         Slider updated = sliderRepository.save(slider);
         return mapToResponse(updated);

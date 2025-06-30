@@ -36,12 +36,18 @@ public class SectionService {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new BadRequestException("Section not found."));
 
-        section.setName(request.getName());
-        section.setDescription(request.getDescription());
-        section.setType(request.getType());
-        section.setImageUrl(request.getImage());
-        section.setActive(request.getActive());
-        section.setSortOrder(request.getSortOrder());
+        if (request.getName() != null)
+            section.setName(request.getName());
+        if (request.getDescription() != null)
+            section.setDescription(request.getDescription());
+        if (request.getType() != null)
+            section.setType(request.getType());
+        if (request.getImage() != null)
+            section.setImageUrl(request.getImage());
+        if (request.getActive() != null)
+            section.setActive(request.getActive());
+        if (request.getSortOrder() != null)
+            section.setSortOrder(request.getSortOrder());
 
         Section updated = sectionRepository.save(section);
         return mapToResponse(updated);
