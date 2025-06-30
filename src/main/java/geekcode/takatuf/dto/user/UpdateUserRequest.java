@@ -1,6 +1,5 @@
 package geekcode.takatuf.dto.user;
 
-import geekcode.takatuf.Enums.UserType;
 import lombok.Data;
 
 import jakarta.validation.constraints.Email;
