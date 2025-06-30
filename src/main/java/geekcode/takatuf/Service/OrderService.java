@@ -358,6 +358,7 @@ public class OrderService {
                                 .productName(i.getProduct().getName())
                                 .quantity(i.getQuantity())
                                 .price(i.getProduct().getPrice())
+                                .image(i.getProduct().getImage())
                                 .build()).toList())
                         .build();
         }

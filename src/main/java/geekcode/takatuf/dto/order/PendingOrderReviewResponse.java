@@ -29,5 +29,6 @@ public class PendingOrderReviewResponse {
         private String productName;
         private int quantity;
         private BigDecimal price;
+        private String image;
     }
 }

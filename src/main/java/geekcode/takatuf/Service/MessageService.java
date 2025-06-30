@@ -6,6 +6,7 @@ import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.ChatRepository;
+import geekcode.takatuf.Repository.DeletedChatRepository;
 import geekcode.takatuf.Repository.MessageRepository;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.dto.ChatMessage;
@@ -26,7 +27,7 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final ChatRepository chatRepository;
-
+    private final DeletedChatRepository deletedChatRepository;
     private final SimpMessagingTemplate messagingTemplate;
     public Message saveMessage(ChatMessage dto) {
         User sender = userRepository.findById(dto.getSenderId())
@@ -45,6 +46,12 @@ public class MessageService {
                 .content(dto.getContent())
                 .timestamp(LocalDateTime.now())
                 .build();
+
+        deletedChatRepository.findByUserAndChat( sender, chat)
+                .ifPresent(deleted -> deletedChatRepository.delete(deleted));
+
+        deletedChatRepository.findByUserAndChat( receiver,chat)
+                .ifPresent(deleted -> deletedChatRepository.delete(deleted));
 
         return messageRepository.save(message);
     }
@@ -97,6 +104,43 @@ public class MessageService {
         return messages.stream()
                 .map(MessagesResponse::fromEntity)
                 .toList();
+    }
+
+    public List<MessagesResponse> getMessagesForChat(Long chatId, Long userId, int monthsAgo) {
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat not found"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // نتحقق إذا المستخدم حذف الشات
+        boolean isDeleted = deletedChatRepository
+                .existsByUserAndChat(user, chat);
+
+        if (isDeleted) {
+            return List.of(); // المستخدم حذف الشات، لا نعرض له الرسائل
+        }
+
+        // نحسب تاريخ أول يوم في الشهر المطلوب
+        LocalDateTime from = LocalDateTime.now().minusMonths(monthsAgo);
+
+        List<Message> messages = messageRepository
+                .findByChatIdAndTimestampAfterOrderByTimestampAsc(chatId, from);
+
+        return messages.stream()
+                .filter(message -> !message.isDeleted()) // لا نعرض الرسائل المحذوفة
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    private MessagesResponse mapToResponse(Message message) {
+        return MessagesResponse.builder()
+                .id(message.getId())
+                .content(message.getContent())
+                .timestamp(message.getTimestamp())
+                .senderName(message.getSender() != null ? message.getSender().getName() : null)
+                .receiverName(message.getReceiver() != null ? message.getReceiver().getName() : null)
+                .build();
     }
 
 }
