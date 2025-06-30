@@ -14,7 +14,6 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import geekcode.takatuf.dto.*;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,7 +26,7 @@ public class ProductService {
         private final StoreRepository storeRepository;
 
         public ProductResponse addProduct(Long storeId, String name, String description, BigDecimal price,
-                        ProductCategory category, MultipartFile imageFile, String currentUsername) {
+                        ProductCategory category, Integer quantity, MultipartFile imageFile, String currentUsername) {
 
                 Store store = storeRepository.findById(storeId)
                                 .orElseThrow(() -> new BadRequestException("Store not found"));
@@ -46,6 +45,7 @@ public class ProductService {
                                 .description(description)
                                 .price(price)
                                 .image(imageUrl)
+                                .quantity(quantity)
                                 .category(category)
                                 .createdAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
@@ -56,8 +56,8 @@ public class ProductService {
                 return buildProductResponse(savedProduct);
         }
 
-        public ProductResponse updateProduct(Long productId, String name, String description, Double price,
-                        String category, MultipartFile imageFile, String currentUsername) {
+        public ProductResponse updateProduct(Long productId, String name, String description, BigDecimal price,
+                        String category, Integer quantity, MultipartFile imageFile, String currentUsername) {
 
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new BadRequestException("Product not found"));
@@ -78,8 +78,12 @@ public class ProductService {
                         product.setDescription(description);
                 }
 
-                if (price != null && price > 0) {
-                        product.setPrice(BigDecimal.valueOf(price));
+                if (price != null && price.compareTo(BigDecimal.ZERO) > 0) {
+                        product.setPrice(price);
+                }
+
+                if (quantity != null && quantity >= 0) {
+                        product.setQuantity(quantity);
                 }
 
                 if (category != null && !category.isBlank()) {
@@ -167,6 +171,7 @@ public class ProductService {
                                 .description(product.getDescription())
                                 .price(product.getPrice())
                                 .image(product.getImage())
+                                .quantity(product.getQuantity())
                                 .category(product.getCategory().name())
                                 .createdAt(product.getCreatedAt())
                                 .updatedAt(product.getUpdatedAt())
@@ -184,7 +189,9 @@ public class ProductService {
         }
 
         private String saveImage(MultipartFile file) {
+
                 return "https://products/images/" + file.getOriginalFilename();
+
         }
 
 }

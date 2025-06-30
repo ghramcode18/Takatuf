@@ -24,6 +24,8 @@ public class PlaceOrderRequest {
     private String category;
     private String customizationDetails;
 
+    private String address;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

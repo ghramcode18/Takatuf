@@ -1,6 +1,5 @@
 package geekcode.takatuf.dto;
 
-import lombok.Data;
 import java.util.List;
 
 public class PaginatedResponse<T> {

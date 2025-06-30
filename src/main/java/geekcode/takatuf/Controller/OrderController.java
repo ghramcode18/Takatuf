@@ -1,6 +1,5 @@
 package geekcode.takatuf.Controller;
 
-import geekcode.takatuf.Entity.PendingOrder;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Enums.PaymentMethod;
 import geekcode.takatuf.Repository.UserRepository;
@@ -12,10 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
-import java.nio.file.LinkOption;
+import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import java.util.List;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -26,10 +24,9 @@ public class OrderController {
     private final UserRepository userRepository;
 
     private Long extractUserId(UserDetails userDetails) {
-        String email = userDetails.getUsername();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return user.getId();
+        return userRepository.findByEmail(userDetails.getUsername())
+                .map(User::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     @PostMapping("/place")
@@ -64,7 +61,7 @@ public class OrderController {
     @PostMapping("/custom/place")
     public ResponseEntity<OrderResponse> placeCustomOrder(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PlaceOrderRequest request) {
+            @Valid @RequestBody PlaceOrderRequest request) {
 
         Long userId = extractUserId(userDetails);
         OrderResponse response = orderService.placeCustomOrder(userId, request);
@@ -75,7 +72,7 @@ public class OrderController {
     public ResponseEntity<MessageResponse> decideCustomOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId,
-            @RequestBody CustomOrderDecisionRequest request) {
+            @Valid @RequestBody CustomOrderDecisionRequest request) {
 
         Long sellerId = extractUserId(userDetails);
         orderService.decideCustomOrder(sellerId, orderId, request);
@@ -92,10 +89,9 @@ public class OrderController {
     @PostMapping("/pending-order")
     public ResponseEntity<Long> createOrGetPendingOrder(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PlaceOrderRequest orderReques
-    ) {
+            @RequestBody PlaceOrderRequest orderReques) {
         Long userId = extractUserId(userDetails);
-         Long pendingOrderId = orderService.createOrGetPendingOrder(userId,orderReques);
+        Long pendingOrderId = orderService.createOrGetPendingOrder(userId, orderReques);
         return ResponseEntity.ok(pendingOrderId);
     }
 
@@ -103,41 +99,38 @@ public class OrderController {
     public ResponseEntity<Long> updatePendingOrderAddress(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long pendingOrderId,
-            @RequestBody AddressRequest addressRequest
-    ) {
+            @RequestBody AddressRequest addressRequest) {
         Long userId = extractUserId(userDetails);
-        orderService.updatePendingOrderAddress(userId, pendingOrderId,addressRequest);
+        orderService.updatePendingOrderAddress(userId, pendingOrderId, addressRequest);
         return ResponseEntity.ok(pendingOrderId);
     }
+
     @PutMapping("/pending-order/payment")
     public ResponseEntity<Long> updatePendingOrderPayment(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long pendingOrderId,
-            @RequestParam PaymentMethod paymentMethod
-    ) {
+            @RequestParam PaymentMethod paymentMethod) {
         Long userId = extractUserId(userDetails);
-        orderService.updatePendingOrderPayment(userId, pendingOrderId,paymentMethod);
-        return ResponseEntity.ok(pendingOrderId );
+        orderService.updatePendingOrderPayment(userId, pendingOrderId, paymentMethod);
+        return ResponseEntity.ok(pendingOrderId);
     }
 
     @PostMapping("/pending-order/review")
     public ResponseEntity<PendingOrderReviewResponse> getPendingOrderReview(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long pendingOrderId
-    ) {
+            @RequestParam Long pendingOrderId) {
         Long userId = extractUserId(userDetails);
-        PendingOrderReviewResponse response = orderService.getPendingOrderReview(userId,pendingOrderId);
-        return ResponseEntity.ok(response );
+        PendingOrderReviewResponse response = orderService.getPendingOrderReview(userId, pendingOrderId);
+        return ResponseEntity.ok(response);
     }
+
     @PostMapping("/pending-order/confirm")
     public ResponseEntity<List<OrderResponse>> confirmPendingOrder(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long pendingOrderId
-    ) {
+            @RequestParam Long pendingOrderId) {
         Long userId = extractUserId(userDetails);
-        List<OrderResponse> response = orderService.confirmPendingOrder(userId,pendingOrderId);
-         return ResponseEntity.ok(response );
+        List<OrderResponse> response = orderService.confirmPendingOrder(userId, pendingOrderId);
+        return ResponseEntity.ok(response);
     }
-
 
 }
