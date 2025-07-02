@@ -15,11 +15,13 @@ public class ProductResponse {
     private BigDecimal price;
     private String image;
     private String category;
+    private Integer quantity;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long storeId;
     private String storeName;
     private String storeImage;
+    private Long sellerId;
     private String sellerName;
     private String sellerImage;
     private Double averageRating;

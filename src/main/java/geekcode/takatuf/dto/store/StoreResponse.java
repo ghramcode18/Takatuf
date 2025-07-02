@@ -1,6 +1,6 @@
 package geekcode.takatuf.dto.store;
 
-import org.springframework.web.multipart.MultipartFile;
+
 
 import lombok.*;
 
