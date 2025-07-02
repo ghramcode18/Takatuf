@@ -6,7 +6,6 @@ import lombok.*;
 import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import geekcode.takatuf.Enums.ProductCategory;
 
 @Entity
 @Table(name = "products")
@@ -30,8 +29,9 @@ public class Product {
 
     private Integer quantity;
 
-    @Enumerated(EnumType.STRING)
-    private ProductCategory category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
