@@ -47,7 +47,6 @@ public class AdminSeeder {
             System.out.println("Admin user already exists.");
         }
     }
-
     @PostConstruct
     public void seedRole() {
         if (roleRepository.findByRoleName(RoleName.ADMIN).isEmpty()) {
