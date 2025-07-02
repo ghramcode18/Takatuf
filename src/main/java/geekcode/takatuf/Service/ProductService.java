@@ -180,6 +180,7 @@ public class ProductService {
                                 .storeName(store.getName())
                                 .storeImage(store.getImageUrl())
 
+                                .sellerId(owner.getId())
                                 .sellerName(owner.getName())
                                 .sellerImage(sellerImage)
 

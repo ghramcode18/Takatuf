@@ -21,6 +21,7 @@ public class ProductResponse {
     private Long storeId;
     private String storeName;
     private String storeImage;
+    private Long sellerId;
     private String sellerName;
     private String sellerImage;
     private Double averageRating;
