@@ -1,0 +1,33 @@
+package geekcode.takatuf.Entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "sliders")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+
+public class Slider {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String title;
+    private String description;
+
+    private String imageUrl;
+    private String targetUrl;
+    private String type; // "STORE", "PRODUCT", "LINK", "NONE"
+
+    private boolean active;
+    private int priority;
+
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+}

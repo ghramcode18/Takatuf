@@ -5,8 +5,6 @@ import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
 import geekcode.takatuf.Service.StoreService;
 import lombok.RequiredArgsConstructor;
-import jakarta.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -104,15 +102,17 @@ public class StoreController {
         return ResponseEntity.ok(stores);
     }
 
-    @GetMapping("/mystores")
-    public ResponseEntity<List<StoreResponse>> getMyStores(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
+  @GetMapping("/mystores")
+public ResponseEntity<List<StoreResponse>> getStoresByOwner(
+        @AuthenticationPrincipal UserDetails userDetails) {
 
-        List<StoreResponse> myStores = storeService.getStoresByOwnerEmail(userDetails.getUsername());
-        return ResponseEntity.ok(myStores);
+    if (userDetails == null) {
+        return ResponseEntity.status(401).build();
     }
+
+    List<StoreResponse> stores = storeService.getStoresByOwner(userDetails.getUsername());
+    return ResponseEntity.ok(stores);
+}
+
 
 }

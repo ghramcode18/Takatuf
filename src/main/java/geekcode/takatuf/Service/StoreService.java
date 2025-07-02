@@ -2,7 +2,6 @@ package geekcode.takatuf.Service;
 
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
-import jakarta.persistence.EntityNotFoundException;
 import geekcode.takatuf.Entity.Store;
 import geekcode.takatuf.Entity.StoreReview;
 import geekcode.takatuf.Entity.User;
@@ -11,7 +10,6 @@ import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
-import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.StoreReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -117,6 +115,18 @@ public class StoreService {
         return mapToResponse(store);
     }
 
+   public List<StoreResponse> getStoresByOwner(String username) {
+    User user = userRepository.findByEmail(username)
+            .orElseThrow(() -> new BadRequestException("User not found."));
+
+    List<Store> stores = storeRepository.findByOwner_Id(user.getId());
+
+    return stores.stream()
+            .map(this::mapToResponse)
+            .toList();
+}
+
+
     private StoreResponse mapToResponse(Store store) {
         List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());
         double averageRating = reviews.stream()
@@ -158,13 +168,5 @@ public class StoreService {
                 .toList();
     }
 
-    public List<StoreResponse> getStoresByOwnerEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadRequestException("User not found."));
-        List<Store> stores = storeRepository.findByOwner_Id(user.getId());
-        return stores.stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
 
 }

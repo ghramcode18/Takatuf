@@ -28,7 +28,7 @@ public class Product {
     private BigDecimal price;
     private String image;
 
-    private Long Quantity;
+    private Integer quantity;
 
     @Enumerated(EnumType.STRING)
     private ProductCategory category;

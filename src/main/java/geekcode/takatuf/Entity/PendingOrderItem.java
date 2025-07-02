@@ -2,6 +2,8 @@ package geekcode.takatuf.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -9,6 +11,8 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Setter
+@Getter
 public class PendingOrderItem {
 
     @Id
@@ -22,6 +26,8 @@ public class PendingOrderItem {
     private Product product;
 
     private int quantity;
+
+    private BigDecimal price;
 
     private LocalDateTime addedAt;
 }

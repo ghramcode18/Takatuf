@@ -27,14 +27,13 @@ import java.util.stream.Collectors;
 public class OrderService {
 
         private final OrderRepository orderRepository;
-        
         private final StoreRepository storeRepository;
         private final ProductRepository productRepository;
         private final OrderItemRepository orderItemRepository;
         private final UserRepository userRepository;
-
         private final PendingOrderItemRepository pendingOrderItemRepository;
         private final PendingOrderRepository pendingOrderRepository;
+
         @Transactional
         public OrderResponse placeOrder(Long userId, PlaceOrderRequest request) {
                 User user = userRepository.findById(userId)
@@ -44,22 +43,36 @@ public class OrderService {
                         throw new ResourceNotFoundException("Order must contain at least one product");
                 }
 
-                Product firstProduct = productRepository.findById(request.getItems().get(0).getProductId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-                Store store = firstProduct.getStore();
+                Map<Long, Product> productMap = request.getItems().stream()
+                                .map(item -> productRepository.findById(item.getProductId())
+                                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                                "Product not found: " + item.getProductId())))
+                                .collect(Collectors.toMap(Product::getId, p -> p));
 
-                BigDecimal totalPrice = request.getItems().stream()
-                                .map(item -> {
-                                        Product product = productRepository.findById(item.getProductId())
-                                                        .orElseThrow(() -> new ResourceNotFoundException(
-                                                                        "Product not found: " + item.getProductId()));
-                                        return product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-                                })
+                List<OrderItem> allOrderItems = new ArrayList<>();
+
+                for (PlaceOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
+                        Product product = productMap.get(itemRequest.getProductId());
+
+                        OrderItem orderItem = OrderItem.builder()
+                                        .product(product)
+                                        .quantity(itemRequest.getQuantity())
+                                        .price(product.getPrice())
+                                        .address(request.getAddress())
+                                        .orderDate(LocalDateTime.now())
+                                        .status(OrderStatus.PLACED)
+                                        .build();
+
+                        allOrderItems.add(orderItem);
+                }
+
+                BigDecimal totalPrice = allOrderItems.stream()
+                                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 Order order = Order.builder()
                                 .user(user)
-                                .store(store)
+                                .store(null)
                                 .status(OrderStatus.PLACED)
                                 .trackingInfo(TrackingInfo.PROCESSING)
                                 .totalPrice(totalPrice)
@@ -70,39 +83,12 @@ public class OrderService {
 
                 Order savedOrder = orderRepository.save(order);
 
-                List<OrderItem> orderItems = request.getItems().stream().map(itemReq -> {
-                        Product product = productRepository.findById(itemReq.getProductId())
-                                        .orElseThrow(() -> new ResourceNotFoundException(
-                                                        "Product not found: " + itemReq.getProductId()));
+                allOrderItems.forEach(item -> item.setOrder(savedOrder));
+                orderItemRepository.saveAll(allOrderItems);
 
-                        return OrderItem.builder()
-                                        .product(product)
-                                        .quantity(itemReq.getQuantity())
-                                        .price(product.getPrice())
-                                        .orderDate(LocalDateTime.now())
-                                        .status(OrderStatus.PLACED)
-                                        .order(savedOrder)
-                                        .build();
-                }).collect(Collectors.toList());
+                savedOrder.setOrderItems(allOrderItems);
 
-                orderItemRepository.saveAll(orderItems);
-
-                return OrderResponse.builder()
-                                .orderId(savedOrder.getId())
-                                .status(savedOrder.getStatus())
-                                .totalPrice(savedOrder.getTotalPrice())
-                                .paymentMethod(savedOrder.getPaymentMethod())
-                                .trackingInfo(savedOrder.getTrackingInfo())
-                                .orderType(savedOrder.getOrderType())
-                                .createdAt(savedOrder.getCreatedAt())
-                                .updatedAt(savedOrder.getUpdatedAt())
-                                .items(orderItems.stream().map(item -> OrderResponse.OrderItemResponse.builder()
-                                                .productId(item.getProduct().getId())
-                                                .productName(item.getProduct().getName())
-                                                .quantity(item.getQuantity())
-                                                .price(item.getPrice())
-                                                .build()).collect(Collectors.toList()))
-                                .build();
+                return mapToOrderResponse(savedOrder);
         }
 
         @Transactional
@@ -143,30 +129,12 @@ public class OrderService {
                         throw new UnauthorizedException("Unauthorized to view this order");
                 }
 
-                return OrderResponse.builder()
-                                .orderId(order.getId())
-                                .status(order.getStatus())
-                                .trackingInfo(order.getTrackingInfo())
-                                .totalPrice(order.getTotalPrice())
-                                .paymentMethod(order.getPaymentMethod())
-                                .orderType(order.getOrderType())
-                                .createdAt(order.getCreatedAt())
-                                .updatedAt(order.getUpdatedAt())
-                                .items(order.getOrderItems() == null ? List.of()
-                                                : order.getOrderItems().stream()
-                                                                .map(item -> OrderResponse.OrderItemResponse.builder()
-                                                                                .productId(item.getProduct().getId())
-                                                                                .productName(item.getProduct()
-                                                                                                .getName())
-                                                                                .quantity(item.getQuantity())
-                                                                                .price(item.getPrice())
-                                                                                .build())
-                                                                .collect(Collectors.toList()))
-                                .build();
+                return mapToOrderResponse(order);
         }
 
         @Transactional
-        public OrderResponse placeCustomOrder(Long userId, PlaceOrderRequest request) {
+        public OrderResponse placeCustomOrder(Long userId, PlaceOrderRequest request) 
+        {
                 if (request.getOrderType() != OrderType.CUSTOM) {
                         throw new RuntimeException("Order type must be CUSTOM for custom orders");
                 }
@@ -261,59 +229,94 @@ public class OrderService {
         @Transactional
         public Long createOrGetPendingOrder(Long userId, PlaceOrderRequest request) {
                 User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-                // حذف الطلب المرحلي السابق (لو موجود)
                 pendingOrderRepository.findByUserIdAndStatus(userId, OrderStatus.PENDING)
-                        .ifPresent(existing -> {
-                                pendingOrderItemRepository.deleteAllByPendingOrder(existing);
-                                pendingOrderRepository.delete(existing);
-                        });
+                                .ifPresent(existing -> {
+                                        pendingOrderItemRepository.deleteAllByPendingOrder(existing);
+                                        pendingOrderRepository.delete(existing);
+                                });
 
                 BigDecimal totalPrice = request.getItems().stream()
-                        .map(item -> {
-                                Product product = productRepository.findById(item.getProductId())
-                                        .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Product not found: " + item.getProductId()));
-                                return product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-                        })
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                .map(item -> {
+                                        Product product = productRepository.findById(item.getProductId())
+                                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                                        "Product not found: " + item.getProductId()));
+                                        return product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                                })
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                // إنشاء الطلب المرحلي (بدون store)
                 PendingOrder newOrder = PendingOrder.builder()
-                        .user(user)
-                        .recipientName(user.getName())
-                        .totalPrice(totalPrice)
-                        .status(OrderStatus.PENDING)
-                        .orderType(request.getOrderType())
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
+                                .user(user)
+                                .recipientName(user.getName())
+                                .totalPrice(totalPrice)
+                                .status(OrderStatus.PENDING)
+                                .orderType(request.getOrderType())
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
 
                 PendingOrder savedOrder = pendingOrderRepository.save(newOrder);
 
                 List<PendingOrderItem> items = request.getItems().stream()
-                        .map(itemReq -> {
-                                Product product = productRepository.findById(itemReq.getProductId())
-                                        .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Product not found: " + itemReq.getProductId()));
-                                return PendingOrderItem.builder()
-                                        .pendingOrder(savedOrder)
-                                        .product(product)
-                                        .quantity(itemReq.getQuantity())
-                                        .addedAt(LocalDateTime.now())
-                                        .build();
-                        }).toList();
+                                .map(itemReq -> {
+                                        Product product = productRepository.findById(itemReq.getProductId())
+                                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                                        "Product not found: "
+                                                                                        + itemReq.getProductId()));
+                                        return PendingOrderItem.builder()
+                                                        .pendingOrder(savedOrder)
+                                                        .product(product)
+                                                        .quantity(itemReq.getQuantity())
+                                                        .addedAt(LocalDateTime.now())
+                                                        .build();
+                                }).toList();
 
                 pendingOrderItemRepository.saveAll(items);
 
                 return savedOrder.getId();
         }
 
+        public PendingOrderResponse getPendingOrder(Long userId) {
+                PendingOrder order = pendingOrderRepository.findByUserIdAndStatus(userId, OrderStatus.PENDING)
+                        .orElseThrow(() -> new ResourceNotFoundException("No pending order found"));
+
+                List<PendingOrderItem> items = pendingOrderItemRepository.findByPendingOrder(order);
+
+                BigDecimal total = BigDecimal.ZERO;
+
+                List<PendingOrderItemResponse> itemResponses = new ArrayList<>();
+                for (PendingOrderItem item : items) {
+                        Product product = productRepository.findById(item.getProduct().getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + item.getProduct().getId()));
+                        BigDecimal currentPrice = product.getPrice();
+                        BigDecimal itemTotal = currentPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+
+                        item.setPrice(currentPrice);
+                        total = total.add(itemTotal);
+
+                        itemResponses.add(new PendingOrderItemResponse(
+                                product.getId(),
+                                product.getName(),
+                                currentPrice,
+                                item.getQuantity()
+                        ));
+                }
+
+                order.setTotalPrice(total);
+                pendingOrderItemRepository.saveAll(items);
+                pendingOrderRepository.save(order);
+
+                return new PendingOrderResponse(order.getId(), total, itemResponses);
+        }
+
+
+
         @Transactional
-        public Long updatePendingOrderAddress(Long userId,Long pendingOrderId, AddressRequest addressRequest) {
+        public Long updatePendingOrderAddress(Long userId, Long pendingOrderId, AddressRequest addressRequest) {
                 PendingOrder pendingOrder = pendingOrderRepository.findById(pendingOrderId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Pending order not found for user: " + userId));
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Pending order not found for user: " + userId));
 
                 pendingOrder.setRecipientName(addressRequest.getFirstName() + " " + addressRequest.getLastName());
                 pendingOrder.setRegion(addressRequest.getRegion());
@@ -326,58 +329,59 @@ public class OrderService {
         }
 
         @Transactional
-        public Long updatePendingOrderPayment(Long userId,Long pendingOrderId,PaymentMethod paymentMethod) {
+        public Long updatePendingOrderPayment(Long userId, Long pendingOrderId, PaymentMethod paymentMethod) {
                 PendingOrder pendingOrder = pendingOrderRepository.findById(pendingOrderId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Pending order not found for user: " + userId));
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Pending order not found for user: " + userId));
 
                 pendingOrder.setPaymentMethod(paymentMethod);
                 pendingOrder.setUpdatedAt(LocalDateTime.now());
 
-                 pendingOrderRepository.save(pendingOrder);
+                pendingOrderRepository.save(pendingOrder);
                 return pendingOrder.getId();
         }
 
-        public PendingOrderReviewResponse getPendingOrderReview(Long userId,Long pendingOrderId) {
+        public PendingOrderReviewResponse getPendingOrderReview(Long userId, Long pendingOrderId) {
                 PendingOrder pendingOrder = pendingOrderRepository.findById(pendingOrderId)
-                        .orElseThrow(() -> new ResourceNotFoundException("No pending order found for user: " + userId));
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "No pending order found for user: " + userId));
 
-                        List<PendingOrderItem> items = pendingOrderItemRepository.findByPendingOrder(pendingOrder);
+                List<PendingOrderItem> items = pendingOrderItemRepository.findByPendingOrder(pendingOrder);
 
                 return PendingOrderReviewResponse.builder()
-                        .pendingOrderId(pendingOrder.getId())
-                        .recipientName(pendingOrder.getRecipientName())
-                        .region(pendingOrder.getRegion())
-                        .streetName(pendingOrder.getStreetName())
-                        .buildingNumber(pendingOrder.getBuildingNumber())
-                        .phoneNumber(pendingOrder.getPhoneNumber())
-                        .orderType(pendingOrder.getOrderType())
-                        .paymentMethod(pendingOrder.getPaymentMethod())
-                        .totalPrice(pendingOrder.getTotalPrice())
-                        .items(items.stream().map(i -> PendingOrderReviewResponse.Item.builder()
-                                .productId(i.getProduct().getId())
-                                .productName(i.getProduct().getName())
-                                .quantity(i.getQuantity())
-                                .price(i.getProduct().getPrice())
-                                .image(i.getProduct().getImage())
-                                .build()).toList())
-                        .build();
+                                .pendingOrderId(pendingOrder.getId())
+                                .recipientName(pendingOrder.getRecipientName())
+                                .region(pendingOrder.getRegion())
+                                .streetName(pendingOrder.getStreetName())
+                                .buildingNumber(pendingOrder.getBuildingNumber())
+                                .phoneNumber(pendingOrder.getPhoneNumber())
+                                .orderType(pendingOrder.getOrderType())
+                                .paymentMethod(pendingOrder.getPaymentMethod())
+                                .totalPrice(pendingOrder.getTotalPrice())
+                                .items(items.stream().map(i -> PendingOrderReviewResponse.Item.builder()
+                                                .productId(i.getProduct().getId())
+                                                .productName(i.getProduct().getName())
+                                                .quantity(i.getQuantity())
+                                                .price(i.getProduct().getPrice())
+                                                .build()).toList())
+                                .build();
         }
 
         @Transactional
-        public List<OrderResponse> confirmPendingOrder(Long userId,Long pendingOrderId) {
+        public List<OrderResponse> confirmPendingOrder(Long userId, Long pendingOrderId) {
                 User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
                 // جلب الطلب المرحلي
                 PendingOrder pendingOrder = pendingOrderRepository
-                        .findById(pendingOrderId)
-                        .orElseThrow(() -> new ResourceNotFoundException("No pending order found"));
+                                .findById(pendingOrderId)
+                                .orElseThrow(() -> new ResourceNotFoundException("No pending order found"));
 
                 List<PendingOrderItem> items = pendingOrderItemRepository.findByPendingOrder(pendingOrder);
 
                 // تقسيم العناصر حسب المتجر
                 Map<Store, List<PendingOrderItem>> groupedByStore = items.stream()
-                        .collect(Collectors.groupingBy(item -> item.getProduct().getStore()));
+                                .collect(Collectors.groupingBy(item -> item.getProduct().getStore()));
 
                 List<OrderResponse> confirmedOrders = new ArrayList<>();
 
@@ -386,20 +390,21 @@ public class OrderService {
                         List<PendingOrderItem> storeItems = entry.getValue();
 
                         BigDecimal totalPrice = storeItems.stream()
-                                .map(i -> i.getProduct().getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                        .map(i -> i.getProduct().getPrice()
+                                                        .multiply(BigDecimal.valueOf(i.getQuantity())))
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                         Order order = Order.builder()
-                                .user(user)
-                                .store(store)
-                                .status(OrderStatus.PLACED)
-                                .trackingInfo(TrackingInfo.PROCESSING)
-                                .totalPrice(totalPrice)
-                                .orderType(pendingOrder.getOrderType())
-                                .paymentMethod(pendingOrder.getPaymentMethod())
-                                .createdAt(LocalDateTime.now())
-                                .updatedAt(LocalDateTime.now())
-                                .build();
+                                        .user(user)
+                                        .store(store)
+                                        .status(OrderStatus.PLACED)
+                                        .trackingInfo(TrackingInfo.PROCESSING)
+                                        .totalPrice(totalPrice)
+                                        .orderType(pendingOrder.getOrderType())
+                                        .paymentMethod(pendingOrder.getPaymentMethod())
+                                        .createdAt(LocalDateTime.now())
+                                        .updatedAt(LocalDateTime.now())
+                                        .build();
 
                         orderRepository.save(order);
 
@@ -410,27 +415,28 @@ public class OrderService {
 
                                 // تحديث كمية المنتج
                                 if (product.getQuantity() < item.getQuantity()) {
-                                        throw new RuntimeException("Not enough stock for product: " + product.getName());
+                                        throw new RuntimeException(
+                                                        "Not enough stock for product: " + product.getName());
                                 }
                                 product.setQuantity(product.getQuantity() - item.getQuantity());
                                 productRepository.save(product);
 
                                 OrderItem orderItem = OrderItem.builder()
-                                        .order(order)
-                                        .product(product)
-                                        .quantity(item.getQuantity())
-                                        .price(product.getPrice())
-                                        .status(OrderStatus.PLACED)
-                                        .orderDate(LocalDateTime.now())
-//                                        .address(pendingOrder.getAddress()) // من الداتا المدخلة
-                                        .build();
+                                                .order(order)
+                                                .product(product)
+                                                .quantity(item.getQuantity())
+                                                .price(product.getPrice())
+                                                .status(OrderStatus.PLACED)
+                                                .orderDate(LocalDateTime.now())
+                                                // .address(pendingOrder.getAddress()) // من الداتا المدخلة
+                                                .build();
 
                                 orderItems.add(orderItem);
                         }
 
                         orderItemRepository.saveAll(orderItems);
 
-                        confirmedOrders.add(mapToOrderResponse(order,orderItems));
+                        confirmedOrders.add(mapToOrderResponse(order, orderItems));
                 }
 
                 // حذف الطلب المرحلي
@@ -442,21 +448,21 @@ public class OrderService {
 
         private OrderResponse mapToOrderResponse(Order order, List<OrderItem> items) {
                 return OrderResponse.builder()
-                        .orderId(order.getId())
-                        .status(order.getStatus())
-                        .trackingInfo(order.getTrackingInfo())
-                        .paymentMethod(order.getPaymentMethod())
-                        .orderType(order.getOrderType())
-                        .totalPrice(order.getTotalPrice())
-                        .createdAt(order.getCreatedAt())
-                        .updatedAt(order.getUpdatedAt())
-                        .items(items.stream().map(i -> OrderResponse.OrderItemResponse.builder()
-                                .productId(i.getProduct().getId())
-                                .productName(i.getProduct().getName())
-                                .quantity(i.getQuantity())
-                                .price(i.getPrice())
-                                .build()).toList())
-                        .build();
+                                .orderId(order.getId())
+                                .status(order.getStatus())
+                                .trackingInfo(order.getTrackingInfo())
+                                .paymentMethod(order.getPaymentMethod())
+                                .orderType(order.getOrderType())
+                                .totalPrice(order.getTotalPrice())
+                                .createdAt(order.getCreatedAt())
+                                .updatedAt(order.getUpdatedAt())
+                                .items(items.stream().map(i -> OrderResponse.OrderItemResponse.builder()
+                                                .productId(i.getProduct().getId())
+                                                .productName(i.getProduct().getName())
+                                                .quantity(i.getQuantity())
+                                                .price(i.getPrice())
+                                                .build()).toList())
+                                .build();
         }
 
 }

@@ -12,4 +12,8 @@ public class ProductRequest {
     private BigDecimal price;
     private MultipartFile image;
     private String category;
+<<<<<<< HEAD
+=======
+    private Integer quantity ;
+>>>>>>> b2a8628fee48e2cf35c8a0849a1c200336ddb60c
 }

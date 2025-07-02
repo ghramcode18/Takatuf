@@ -1,6 +1,10 @@
 package geekcode.takatuf.dto.store;
 
+<<<<<<< HEAD
 import org.springframework.web.multipart.MultipartFile;
+=======
+
+>>>>>>> b2a8628fee48e2cf35c8a0849a1c200336ddb60c
 
 import lombok.*;
 

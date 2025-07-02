@@ -7,15 +7,12 @@ import geekcode.takatuf.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import geekcode.takatuf.dto.user.UserResponse;
-import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
-
-import geekcode.takatuf.Enums.*;
 
 @RestController
 @RequestMapping("/api/user")
@@ -57,11 +54,11 @@ public class UserController {
     @GetMapping("/getUserInfo")
     public ResponseEntity<User> getUserInfo(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long id )
-    {
+            @RequestParam Long id) {
         User user = userService.findUserId(id);
         return ResponseEntity.ok(user);
     }
+
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {

@@ -1,6 +1,5 @@
 package geekcode.takatuf.Service;
 
-
 import geekcode.takatuf.Entity.Role;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Enums.RoleName;
@@ -11,7 +10,6 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 
 @Component
@@ -61,10 +59,10 @@ public class AdminSeeder {
             System.out.println("ADMIN Role already exists.");
         }
         if (roleRepository.findByRoleName(RoleName.USER).isEmpty()) {
-        Role role2 = Role.builder()
-                .roleName(RoleName.USER)
-                .build();
-        roleRepository.save(role2);
+            Role role2 = Role.builder()
+                    .roleName(RoleName.USER)
+                    .build();
+            roleRepository.save(role2);
             System.out.println("USER role created successfully");
         } else {
             System.out.println("USER Role already exists.");
