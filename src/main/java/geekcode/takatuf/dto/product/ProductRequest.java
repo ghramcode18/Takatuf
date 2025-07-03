@@ -13,4 +13,5 @@ public class ProductRequest {
     private MultipartFile image;
     private String category;
     private Integer quantity ;
+
 }

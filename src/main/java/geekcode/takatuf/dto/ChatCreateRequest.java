@@ -1,15 +1,13 @@
 package geekcode.takatuf.dto;
-
-
 import lombok.*;
 
-@Data
 @Builder
 @Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class MessageResponse {
-    private String message;
-
+@Data
+public class ChatCreateRequest {
+    private Long user1Id;
+    private Long user2Id;
 }

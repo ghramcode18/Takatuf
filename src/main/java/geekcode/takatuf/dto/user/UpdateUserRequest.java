@@ -1,5 +1,6 @@
 package geekcode.takatuf.dto.user;
 
+
 import lombok.Data;
 
 import jakarta.validation.constraints.Email;

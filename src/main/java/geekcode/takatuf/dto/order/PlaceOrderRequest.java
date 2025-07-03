@@ -23,8 +23,8 @@ public class PlaceOrderRequest {
     // Fields for custom orders (only if orderType == CUSTOM)
     private String category;
     private String customizationDetails;
-
     private String address;
+
 
     @Data
     @NoArgsConstructor

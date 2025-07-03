@@ -1,7 +1,6 @@
 package geekcode.takatuf.dto.store;
 
 
-
 import lombok.*;
 
 @Getter
