@@ -1,6 +1,6 @@
 package geekcode.takatuf.dto;
 
-<<<<<<< HEAD
+
 import lombok.*;
 
 import java.util.List;
@@ -9,20 +9,13 @@ import java.util.List;
 @Builder
 @Setter
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-=======
-import java.util.List;
-
->>>>>>> b2a8628fee48e2cf35c8a0849a1c200336ddb60c
 public class PaginatedResponse<T> {
     private List<T> data;
     private long total;
     private int page;
     private int perPage;
 
-<<<<<<< HEAD
-=======
+
     public PaginatedResponse() {
     }
 
@@ -33,7 +26,6 @@ public class PaginatedResponse<T> {
         this.perPage = perPage;
     }
 
->>>>>>> b2a8628fee48e2cf35c8a0849a1c200336ddb60c
     public List<T> getData() {
         return data;
     }
