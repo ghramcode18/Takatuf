@@ -7,6 +7,7 @@ import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.*;
 import geekcode.takatuf.Enums.OrderStatus;
 import geekcode.takatuf.Enums.OrderType;
+import geekcode.takatuf.Enums.UserType;
 import geekcode.takatuf.Enums.TrackingInfo;
 import geekcode.takatuf.dto.order.*;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Collections;
+import java.util.stream.Collectors;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +32,7 @@ public class OrderService {
         private final OrderRepository orderRepository;
         private final StoreRepository storeRepository;
         private final ProductRepository productRepository;
+        private final CategoryRepository categoryRepository;
         private final OrderItemRepository orderItemRepository;
         private final UserRepository userRepository;
         private final PendingOrderItemRepository pendingOrderItemRepository;
@@ -92,6 +96,136 @@ public class OrderService {
         }
 
         @Transactional
+        public OrderResponse placeCustomOrder(Long userId, PlaceOrderRequest request) {
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+                if (user.getType() != UserType.BUYER) {
+                        throw new UnauthorizedException("Only buyers can place custom orders");
+                }
+
+                if (request.getOrderType() != OrderType.CUSTOM) {
+                        throw new RuntimeException("Order type must be CUSTOM for custom orders");
+                }
+
+                if (request.getBuyerProposedPrice() == null
+                                || request.getBuyerProposedPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new RuntimeException("Buyer proposed price must be provided and positive");
+                }
+
+                Category category = null;
+                if (request.getCategoryId() != null) {
+                        category = categoryRepository.findById(request.getCategoryId())
+                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                        "Category not found: " + request.getCategoryId()));
+                }
+
+                Order customOrder = Order.builder()
+                                .user(user)
+                                .category(category)
+                                .customizationDetails(request.getCustomizationDetails())
+                                .imageUrl(request.getImageUrl())
+                                .buyerProposedPrice(request.getBuyerProposedPrice())
+                                .status(OrderStatus.PLACED)
+                                .trackingInfo(TrackingInfo.PROCESSING)
+                                .orderType(OrderType.CUSTOM)
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
+
+                Order savedOrder = orderRepository.save(customOrder);
+                return mapToOrderResponse(savedOrder);
+        }
+
+        @Transactional
+        public OrderResponse decideCustomOrder(Long sellerId, Long orderId, CustomOrderDecisionRequest request) {
+                User seller = userRepository.findById(sellerId)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + sellerId));
+
+                if (seller.getType() != UserType.SELLER) {
+
+                        throw new UnauthorizedException("Only sellers can decide on custom orders");
+                }
+
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Custom Order not found: " + orderId));
+
+                if (order.getStatus() == OrderStatus.ACCEPTED || order.getStatus() == OrderStatus.REJECTED
+                                || order.getStatus() == OrderStatus.CANCELLED) {
+                        throw new RuntimeException("Custom order already finalized");
+                }
+
+                if (Boolean.TRUE.equals(request.getAccept())) {
+                        if (request.getProposedPrice() == null
+                                        || request.getProposedPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                                throw new RuntimeException(
+                                                "Seller must provide a positive proposed price when accepting.");
+                        }
+                        order.setProposedPrice(request.getProposedPrice());
+                        order.setStatus(OrderStatus.ACCEPTED);
+                        order.setTrackingInfo(TrackingInfo.ACCEPTED_BY_STORE);
+                } else {
+                        if (request.getProposedPrice() != null
+                                        && request.getProposedPrice().compareTo(BigDecimal.ZERO) > 0) {
+                                // This is a counter-offer by seller → go to negotiation
+                                order.setProposedPrice(request.getProposedPrice());
+                                order.setStatus(OrderStatus.IN_NEGOTIATION);
+                                order.setTrackingInfo(TrackingInfo.COUNTER_OFFER_BY_STORE);
+                        } else {
+                                // Reject the order outright
+                                order.setStatus(OrderStatus.REJECTED);
+                                order.setTrackingInfo(TrackingInfo.REJECTED_BY_STORE);
+                        }
+                }
+
+                order.setUpdatedAt(LocalDateTime.now());
+                orderRepository.save(order);
+
+                return mapToOrderResponse(order);
+        }
+
+        @Transactional
+        public OrderResponse buyerRespondsCustomOrder(Long buyerId, Long orderId, CustomOrderDecisionRequest request) {
+                User buyer = userRepository.findById(buyerId)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + buyerId));
+
+                if (buyer.getType() != UserType.BUYER) {
+                        throw new UnauthorizedException("Only buyers can respond to custom orders");
+                }
+
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Custom Order not found: " + orderId));
+
+                if (!order.getUser().getId().equals(buyerId)) {
+                        throw new UnauthorizedException("Unauthorized to respond to this order");
+                }
+
+                if (order.getStatus() == OrderStatus.ACCEPTED || order.getStatus() == OrderStatus.REJECTED
+                                || order.getStatus() == OrderStatus.CANCELLED) {
+                        throw new RuntimeException("Custom order already finalized");
+                }
+
+                if (Boolean.TRUE.equals(request.getAccept())) {
+                        if (request.getProposedPrice() == null
+                                        || request.getProposedPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                                throw new RuntimeException(
+                                                "Buyer must provide a positive proposed price when accepting.");
+                        }
+                        order.setBuyerProposedPrice(request.getProposedPrice());
+                        order.setStatus(OrderStatus.IN_NEGOTIATION);
+                        order.setTrackingInfo(TrackingInfo.COUNTER_OFFER_BY_BUYER);
+                } else {
+                        order.setStatus(OrderStatus.REJECTED);
+                        order.setTrackingInfo(TrackingInfo.REJECTED_BY_BUYER);
+                }
+
+                order.setUpdatedAt(LocalDateTime.now());
+                orderRepository.save(order);
+
+                return mapToOrderResponse(order);
+        }
+
+        @Transactional
         public void cancelOrder(Long userId, Long orderId) {
                 Order order = orderRepository.findById(orderId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
@@ -100,19 +234,17 @@ public class OrderService {
                         throw new UnauthorizedException("Unauthorized to cancel this order");
                 }
 
-                if (order.getStatus() != OrderStatus.PLACED) {
-                        throw new RuntimeException("Only placed orders can be cancelled");
+                // Allow cancel only if not accepted/rejected/cancelled yet
+                if (order.getStatus() == OrderStatus.ACCEPTED
+                                || order.getStatus() == OrderStatus.REJECTED
+                                || order.getStatus() == OrderStatus.CANCELLED) {
+                        throw new RuntimeException("Cannot cancel an order that is already finalized");
                 }
 
                 order.setStatus(OrderStatus.CANCELLED);
                 order.setTrackingInfo(TrackingInfo.CANCELLED_BY_USER);
                 order.setUpdatedAt(LocalDateTime.now());
                 orderRepository.save(order);
-
-                if (order.getOrderItems() != null) {
-                        order.getOrderItems().forEach(item -> item.setStatus(OrderStatus.CANCELLED));
-                        orderItemRepository.saveAll(order.getOrderItems());
-                }
         }
 
         public OrderResponse trackOrder(Long orderId) {
@@ -132,97 +264,35 @@ public class OrderService {
                 return mapToOrderResponse(order);
         }
 
-        @Transactional
-        public OrderResponse placeCustomOrder(Long userId, PlaceOrderRequest request) 
-        {
-                if (request.getOrderType() != OrderType.CUSTOM) {
-                        throw new RuntimeException("Order type must be CUSTOM for custom orders");
-                }
-
-                User user = userRepository.findById(userId)
-                                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
-
-                Order customOrder = Order.builder()
-                                .user(user)
-                                .category(request.getCategory())
-                                .customizationDetails(request.getCustomizationDetails())
-                                .status(OrderStatus.PLACED)
-                                .trackingInfo(TrackingInfo.PROCESSING)
-                                .orderType(OrderType.CUSTOM)
-                                .createdAt(LocalDateTime.now())
-                                .updatedAt(LocalDateTime.now())
-                                .build();
-
-                Order savedOrder = orderRepository.save(customOrder);
-                return mapToOrderResponse(savedOrder);
-        }
-
-        @Transactional
-        public OrderResponse decideCustomOrder(Long sellerId, Long orderId, CustomOrderDecisionRequest request) {
-                Order order = orderRepository.findById(orderId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Custom Order not found: " + orderId));
-
-                if (order.getOrderType() != OrderType.CUSTOM) {
-                        throw new RuntimeException("Not a custom order");
-                }
-
-                Store store = order.getStore();
-                if (!store.getOwner().getId().equals(sellerId)) {
-                        throw new UnauthorizedException("Unauthorized to decide on this custom order");
-                }
-
-                if (order.getStatus() != OrderStatus.PLACED) {
-                        throw new RuntimeException("Custom order already processed");
-                }
-
-                if (Boolean.TRUE.equals(request.getAccept())) {
-                        if (request.getProposedPrice() == null
-                                        || request.getProposedPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                                throw new RuntimeException(
-                                                "Proposed price must be provided and positive when accepting the order");
-                        }
-
-                        order.setStatus(OrderStatus.ACCEPTED);
-                        order.setTrackingInfo(TrackingInfo.ACCEPTED_BY_STORE);
-                        order.setProposedPrice(request.getProposedPrice());
-                } else {
-                        order.setStatus(OrderStatus.REJECTED);
-                        order.setTrackingInfo(TrackingInfo.REJECTED_BY_STORE);
-                }
-
-                order.setUpdatedAt(LocalDateTime.now());
-                orderRepository.save(order);
-
-                return mapToOrderResponse(order);
-        }
-
         private OrderResponse mapToOrderResponse(Order order) {
+                List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
+
                 return OrderResponse.builder()
                                 .orderId(order.getId())
                                 .status(order.getStatus())
                                 .trackingInfo(order.getTrackingInfo())
-                                .totalPrice(order.getOrderType() == OrderType.CUSTOM ? order.getProposedPrice()
-                                                : order.getTotalPrice())
-                                .paymentMethod(order.getPaymentMethod())
+                                .totalPrice(order.getTotalPrice())
                                 .orderType(order.getOrderType())
                                 .createdAt(order.getCreatedAt())
                                 .updatedAt(order.getUpdatedAt())
-                                .category(order.getOrderType() == OrderType.CUSTOM ? order.getCategory() : null)
-                                .customizationDetails(order.getOrderType() == OrderType.CUSTOM
-                                                ? order.getCustomizationDetails()
-                                                : null)
-                                .proposedPrice(order.getOrderType() == OrderType.CUSTOM ? order.getProposedPrice()
-                                                : null)
-                                .items(order.getOrderItems() == null ? List.of()
-                                                : order.getOrderItems().stream()
-                                                                .map(item -> OrderResponse.OrderItemResponse.builder()
-                                                                                .productId(item.getProduct().getId())
-                                                                                .productName(item.getProduct()
-                                                                                                .getName())
-                                                                                .quantity(item.getQuantity())
-                                                                                .price(item.getPrice())
-                                                                                .build())
-                                                                .collect(Collectors.toList()))
+                                .items(items != null ? items.stream().map(this::mapToOrderItemDto)
+                                                .collect(Collectors.toList()) : Collections.emptyList())
+
+                                .customizationDetails(order.getCustomizationDetails())
+                                .imageUrl(order.getImageUrl())
+                                .buyerProposedPrice(order.getBuyerProposedPrice())
+                                .proposedPrice(order.getProposedPrice())
+                                .categoryId(order.getCategory() != null ? order.getCategory().getId() : null)
+                                .categoryName(order.getCategory() != null ? order.getCategory().getName() : null)
+                                .build();
+        }
+
+        private OrderResponse.OrderItemResponse mapToOrderItemDto(OrderItem orderItem) {
+                return OrderResponse.OrderItemResponse.builder()
+                                .productId(orderItem.getProduct().getId())
+                                .productName(orderItem.getProduct().getName())
+                                .quantity(orderItem.getQuantity())
+                                .price(orderItem.getPrice())
                                 .build();
         }
 
@@ -279,7 +349,7 @@ public class OrderService {
 
         public PendingOrderResponse getPendingOrder(Long userId) {
                 PendingOrder order = pendingOrderRepository.findByUserIdAndStatus(userId, OrderStatus.PENDING)
-                        .orElseThrow(() -> new ResourceNotFoundException("No pending order found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("No pending order found"));
 
                 List<PendingOrderItem> items = pendingOrderItemRepository.findByPendingOrder(order);
 
@@ -288,7 +358,8 @@ public class OrderService {
                 List<PendingOrderItemResponse> itemResponses = new ArrayList<>();
                 for (PendingOrderItem item : items) {
                         Product product = productRepository.findById(item.getProduct().getId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + item.getProduct().getId()));
+                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                        "Product not found: " + item.getProduct().getId()));
                         BigDecimal currentPrice = product.getPrice();
                         BigDecimal itemTotal = currentPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
 
@@ -296,11 +367,10 @@ public class OrderService {
                         total = total.add(itemTotal);
 
                         itemResponses.add(new PendingOrderItemResponse(
-                                product.getId(),
-                                product.getName(),
-                                currentPrice,
-                                item.getQuantity()
-                        ));
+                                        product.getId(),
+                                        product.getName(),
+                                        currentPrice,
+                                        item.getQuantity()));
                 }
 
                 order.setTotalPrice(total);
@@ -309,8 +379,6 @@ public class OrderService {
 
                 return new PendingOrderResponse(order.getId(), total, itemResponses);
         }
-
-
 
         @Transactional
         public Long updatePendingOrderAddress(Long userId, Long pendingOrderId, AddressRequest addressRequest) {

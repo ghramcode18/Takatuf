@@ -79,12 +79,22 @@ public class OrderController {
         return ResponseEntity.ok(new MessageResponse("Custom order decision processed"));
     }
 
+    @PostMapping("/custom/respond/{orderId}")
+    public ResponseEntity<OrderResponse> buyerRespondsCustomOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId,
+            @Valid @RequestBody CustomOrderDecisionRequest request) {
+
+        Long buyerId = extractUserId(userDetails);
+        OrderResponse response = orderService.buyerRespondsCustomOrder(buyerId, orderId, request);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/card")
     public ResponseEntity<PendingOrderResponse> getPendingOrder(@AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
         return ResponseEntity.ok(orderService.getPendingOrder(userId));
     }
-
 
     @PostMapping("/pending-order")
     public ResponseEntity<Long> createOrGetPendingOrder(

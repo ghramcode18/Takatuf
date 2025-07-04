@@ -1,17 +1,13 @@
 package geekcode.takatuf.Entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import geekcode.takatuf.Enums.PaymentMethod;
+import geekcode.takatuf.Enums.*;
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
-import java.time.LocalDateTime;
-
-import geekcode.takatuf.Enums.OrderStatus;
-import geekcode.takatuf.Enums.OrderType;
-import geekcode.takatuf.Enums.TrackingInfo;
 
 @Entity
 @Table(name = "orders")
@@ -29,12 +25,16 @@ public class Order {
 
     private BigDecimal proposedPrice;
 
+    private String customizationDetails;
+
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;
 
-    private String category;
-    private String customizationDetails;
+    private BigDecimal buyerProposedPrice;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
@@ -60,6 +60,10 @@ public class Order {
     @JoinColumn(name = "store_id")
     @JsonIgnore
     private Store store;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     @JsonIgnore
