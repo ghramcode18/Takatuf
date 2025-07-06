@@ -23,7 +23,7 @@ public class CategoryService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .image(request.getImage())
-                .active(Optional.ofNullable(request.getActive()).orElse(true)) // default to true
+                .active(Optional.ofNullable(request.getActive()).orElse(true)) 
                 .build();
 
         return mapToResponse(categoryRepository.save(category));

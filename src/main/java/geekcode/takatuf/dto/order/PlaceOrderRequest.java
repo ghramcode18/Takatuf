@@ -5,6 +5,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
+
 import geekcode.takatuf.Enums.OrderType;
 
 @Data
@@ -24,8 +27,9 @@ public class PlaceOrderRequest {
     private Long categoryId;
 
     private String customizationDetails;
+    private String name;
 
-    private String imageUrl;
+    private MultipartFile imageFile;
     private BigDecimal buyerProposedPrice;
 
     @Positive(message = "Proposed price must be greater than zero")

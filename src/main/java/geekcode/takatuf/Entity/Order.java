@@ -24,7 +24,8 @@ public class Order {
     private BigDecimal totalPrice;
 
     private BigDecimal proposedPrice;
-
+    @Column(name = "name")
+    private String name;
     private String customizationDetails;
 
     private String imageUrl;

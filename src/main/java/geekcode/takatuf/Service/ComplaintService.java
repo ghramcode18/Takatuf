@@ -1,13 +1,13 @@
 package geekcode.takatuf.Service;
 
 import geekcode.takatuf.Entity.*;
-import geekcode.takatuf.Enums.ComplaintStatus;
 import geekcode.takatuf.Exception.Types.BadRequestException;
+import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.*;
 import geekcode.takatuf.dto.complaint.ComplaintDto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import geekcode.takatuf.Enums.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,16 +61,20 @@ public class ComplaintService {
                 return mapToResponse(complaintRepository.save(complaint));
         }
 
-        public ComplaintResponse reviewComplaint(Long complaintId, Long adminId, ComplaintReviewRequest request) {
+        public ComplaintResponse reviewComplaint(Long complaintId, Long reviewerId, ComplaintReviewRequest request) {
                 Complaint complaint = complaintRepository.findById(complaintId)
                                 .orElseThrow(() -> new BadRequestException("Complaint not found"));
 
-                User admin = userRepository.findById(adminId)
+                User reviewer = userRepository.findById(reviewerId)
                                 .orElseThrow(() -> new BadRequestException("Reviewer not found"));
+
+                if (reviewer.getType() != UserType.ADMIN) {
+                        throw new UnauthorizedException("Only admins can review complaints");
+                }
 
                 complaint.setStatus(request.getStatus());
                 complaint.setDecision(request.getDecision());
-                complaint.setReviewedBy(admin);
+                complaint.setReviewedBy(reviewer);
                 complaint.setReviewedAt(LocalDateTime.now());
 
                 return mapToResponse(complaintRepository.save(complaint));
@@ -83,8 +87,28 @@ public class ComplaintService {
                                 .collect(Collectors.toList());
         }
 
-        public List<ComplaintResponse> getAllComplaints() {
-                return complaintRepository.findAll()
+        public List<ComplaintResponse> getComplaints(Long requesterId, Long targetUserId) {
+                User requester = userRepository.findById(requesterId)
+                                .orElseThrow(() -> new BadRequestException("Requester not found"));
+
+                if (requester.getType() == UserType.ADMIN) {
+                        if (targetUserId != null) {
+                                return complaintRepository.findBySubmittedBy_Id(targetUserId)
+                                                .stream()
+                                                .map(this::mapToResponse)
+                                                .collect(Collectors.toList());
+                        } else {
+                                return complaintRepository.findAll()
+                                                .stream()
+                                                .map(this::mapToResponse)
+                                                .collect(Collectors.toList());
+                        }
+                }
+
+                if (targetUserId != null && !targetUserId.equals(requesterId)) {
+                        throw new UnauthorizedException("You are not authorized to view other users' complaints");
+                }
+                return complaintRepository.findBySubmittedBy_Id(requesterId)
                                 .stream()
                                 .map(this::mapToResponse)
                                 .collect(Collectors.toList());

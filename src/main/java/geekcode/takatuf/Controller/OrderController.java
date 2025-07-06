@@ -1,10 +1,14 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Entity.User;
+import geekcode.takatuf.Enums.OrderType;
 import geekcode.takatuf.Enums.PaymentMethod;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.OrderService;
 import geekcode.takatuf.dto.order.*;
+import geekcode.takatuf.dto.order.OfferDto.BuyerOfferDecisionRequest;
+import geekcode.takatuf.dto.order.OfferDto.OfferResponse;
+import geekcode.takatuf.dto.order.OfferDto.SubmitOfferRequest;
 import geekcode.takatuf.dto.MessageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,8 +16,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
+
+import java.math.BigDecimal;
 import java.util.List;
 import jakarta.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -29,13 +36,12 @@ public class OrderController {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
-    @PostMapping("/place")
-    public ResponseEntity<OrderResponse> placeOrder(
+    @PostMapping(value = "/custom-order", consumes = { "multipart/form-data" })
+    public ResponseEntity<OrderResponse> placeCustomOrder(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PlaceOrderRequest orderRequest) {
-
+            @ModelAttribute PlaceOrderRequest request) {
         Long userId = extractUserId(userDetails);
-        OrderResponse response = orderService.placeOrder(userId, orderRequest);
+        OrderResponse response = orderService.placeCustomOrder(userId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -58,36 +64,29 @@ public class OrderController {
         return ResponseEntity.ok(orderService.trackOrder(orderId));
     }
 
-    @PostMapping("/custom/place")
-    public ResponseEntity<OrderResponse> placeCustomOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody PlaceOrderRequest request) {
-
-        Long userId = extractUserId(userDetails);
-        OrderResponse response = orderService.placeCustomOrder(userId, request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/custom/decide/{orderId}")
-    public ResponseEntity<MessageResponse> decideCustomOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
+    @PostMapping("/custom-orders/{orderId}/offers")
+    public ResponseEntity<?> submitCustomOrderOffer(@AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId,
-            @Valid @RequestBody CustomOrderDecisionRequest request) {
-
+            @RequestBody SubmitOfferRequest request) {
         Long sellerId = extractUserId(userDetails);
-        orderService.decideCustomOrder(sellerId, orderId, request);
-        return ResponseEntity.ok(new MessageResponse("Custom order decision processed"));
+        orderService.submitOffer(sellerId, orderId, request);
+        return ResponseEntity.ok(new MessageResponse("Offer submitted successfully"));
     }
 
-    @PostMapping("/custom/respond/{orderId}")
-    public ResponseEntity<OrderResponse> buyerRespondsCustomOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long orderId,
-            @Valid @RequestBody CustomOrderDecisionRequest request) {
-
+    @GetMapping("/custom-orders/{orderId}/offers")
+    public ResponseEntity<List<OfferResponse>> viewCustomOrderOffers(@AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId) {
         Long buyerId = extractUserId(userDetails);
-        OrderResponse response = orderService.buyerRespondsCustomOrder(buyerId, orderId, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(orderService.getOffersForOrder(buyerId, orderId));
+    }
+
+    @PostMapping("/custom-orders/offers/{offerId}/respond")
+    public ResponseEntity<?> respondToCustomOrderOffer(@AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long offerId,
+            @RequestBody BuyerOfferDecisionRequest request) {
+        Long buyerId = extractUserId(userDetails);
+        orderService.respondToOffer(buyerId, offerId, request);
+        return ResponseEntity.ok(new MessageResponse("Buyer response recorded"));
     }
 
     @GetMapping("/card")
