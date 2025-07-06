@@ -1,5 +1,7 @@
 package geekcode.takatuf.dto.category;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import lombok.*;
 
 public class CategoryDto {
@@ -12,7 +14,7 @@ public class CategoryDto {
     public static class CategoryRequest {
         private String name;
         private String description;
-        private String image;
+        private MultipartFile image;
         private Boolean active;
     }
 

@@ -9,6 +9,14 @@ import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Repository.SectionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
+import java.util.UUID;
 
 import java.util.List;
 
@@ -19,11 +27,13 @@ public class SectionService {
     private final SectionRepository sectionRepository;
 
     public SectionResponse createSection(String username, SectionRequest request) {
+        String imageUrl = saveImage(request.getImage());
+
         Section section = Section.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .type(request.getType())
-                .imageUrl(request.getImage())
+                .imageUrl(imageUrl)
                 .active(request.getActive())
                 .sortOrder(request.getSortOrder())
                 .build();
@@ -42,8 +52,10 @@ public class SectionService {
             section.setDescription(request.getDescription());
         if (request.getType() != null)
             section.setType(request.getType());
-        if (request.getImage() != null)
-            section.setImageUrl(request.getImage());
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String imageUrl = saveImage(request.getImage());
+            section.setImageUrl(imageUrl);
+        }
         if (request.getActive() != null)
             section.setActive(request.getActive());
         if (request.getSortOrder() != null)
@@ -51,6 +63,27 @@ public class SectionService {
 
         Section updated = sectionRepository.save(section);
         return mapToResponse(updated);
+    }
+
+    private String saveImage(MultipartFile image) {
+        if (image == null || image.isEmpty())
+            return null;
+
+        try {
+            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+            Path uploadPath = Paths.get("uploads/sections/");
+
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return "/uploads/sections/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image", e);
+        }
     }
 
     public SectionResponse getSectionById(Long id) {

@@ -1,6 +1,5 @@
 package geekcode.takatuf.Controller;
 
-import geekcode.takatuf.Entity.Product;
 import geekcode.takatuf.Service.ProductService;
 import geekcode.takatuf.dto.MessageResponse;
 import geekcode.takatuf.dto.PaginatedResponse;
@@ -12,9 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import geekcode.takatuf.Entity.*;
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 
 @RestController

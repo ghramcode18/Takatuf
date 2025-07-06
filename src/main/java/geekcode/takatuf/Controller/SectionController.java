@@ -19,22 +19,28 @@ public class SectionController {
 
     private final SectionService sectionService;
 
-    @PostMapping("/add")
-    public ResponseEntity<SectionResponse> createSection(@AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SectionRequest request) {
+    @PostMapping(value = "/add", consumes = "multipart/form-data")
+    public ResponseEntity<SectionResponse> createSection(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @ModelAttribute SectionRequest request) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
+
         return ResponseEntity.ok(sectionService.createSection(userDetails.getUsername(), request));
     }
 
-    @PostMapping("/update/{id}")
-    public ResponseEntity<SectionResponse> updateSection(@PathVariable Long id,
+    @PostMapping(value = "/update/{id}", consumes = "multipart/form-data")
+    public ResponseEntity<SectionResponse> updateSection(
+            @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SectionRequest request) {
+            @ModelAttribute SectionRequest request) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
+
         return ResponseEntity.ok(sectionService.updateSection(id, userDetails.getUsername(), request));
     }
 
@@ -49,21 +55,27 @@ public class SectionController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteSection(@PathVariable Long id,
+    public ResponseEntity<Void> deleteSection(
+            @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
+
         sectionService.deleteSection(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/sort")
-    public ResponseEntity<Void> sortSections(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<Void> sortSections(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody List<SectionSortRequest> sortRequests) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
+
         sectionService.sortSections(userDetails.getUsername(), sortRequests);
         return ResponseEntity.ok().build();
     }

@@ -3,6 +3,7 @@ package geekcode.takatuf.Controller;
 import geekcode.takatuf.Service.CategoryService;
 import geekcode.takatuf.dto.category.CategoryDto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,10 +18,10 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    @PostMapping("/add")
+    @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CategoryResponse> createCategory(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody CategoryRequest request) {
+            @ModelAttribute CategoryRequest request) {
 
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
@@ -30,11 +31,11 @@ public class CategoryController {
         return ResponseEntity.ok(category);
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CategoryResponse> updateCategory(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
-            @RequestBody CategoryRequest request) {
+            @ModelAttribute CategoryRequest request) {
 
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
@@ -68,5 +69,4 @@ public class CategoryController {
         CategoryResponse category = categoryService.getCategoryById(id);
         return ResponseEntity.ok(category);
     }
-
 }

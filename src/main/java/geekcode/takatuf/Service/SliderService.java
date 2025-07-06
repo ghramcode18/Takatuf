@@ -9,8 +9,13 @@ import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Repository.SliderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
+import java.io.IOException;
+import java.nio.file.*;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -19,10 +24,12 @@ public class SliderService {
     private final SliderRepository sliderRepository;
 
     public SliderResponse createSlider(String username, SliderRequest request) {
+        String imageUrl = saveImage(request.getImage());
+
         Slider slider = Slider.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl)
                 .targetUrl(request.getTargetUrl())
                 .type(request.getType())
                 .active(request.isActive())
@@ -43,8 +50,7 @@ public class SliderService {
             slider.setTitle(request.getTitle());
         if (request.getDescription() != null)
             slider.setDescription(request.getDescription());
-        if (request.getImageUrl() != null)
-            slider.setImageUrl(request.getImageUrl());
+
         if (request.getTargetUrl() != null)
             slider.setTargetUrl(request.getTargetUrl());
         if (request.getType() != null)
@@ -56,10 +62,33 @@ public class SliderService {
         if (request.getEndDate() != null)
             slider.setEndDate(request.getEndDate());
 
-        slider.setActive(request.isActive()); 
-
+        slider.setActive(request.isActive());
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String imageUrl = saveImage(request.getImage());
+            slider.setImageUrl(imageUrl);
+        }
         Slider updated = sliderRepository.save(slider);
         return mapToResponse(updated);
+    }
+
+    private String saveImage(MultipartFile image) {
+        if (image == null || image.isEmpty())
+            return null;
+
+        try {
+            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+            Path uploadPath = Paths.get("uploads/slider/");
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return "/uploads/slider/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image", e);
+        }
     }
 
     public SliderResponse getSliderById(Long id) {

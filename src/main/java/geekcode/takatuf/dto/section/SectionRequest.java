@@ -1,5 +1,7 @@
 package geekcode.takatuf.dto.section;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import lombok.Data;
 
 @Data
@@ -9,5 +11,5 @@ public class SectionRequest {
     private String type; // store | product | general
     private Integer sortOrder;
     private Boolean active;
-    private String image;
+    private MultipartFile image;
 }
