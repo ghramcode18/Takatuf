@@ -103,9 +103,13 @@ public class User {
     private List<Store> stores;
 
     // One-to-Many with Complaints
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "submittedBy")
     @JsonIgnore
     private List<Complaint> complaints;
+
+    @OneToMany(mappedBy = "reviewedBy")
+    @JsonIgnore
+    private List<Complaint> reviewedComplaints;
 
     // One-to-Many with Notifications0
     @OneToMany(mappedBy = "user")
