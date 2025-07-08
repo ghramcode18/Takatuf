@@ -1,21 +1,18 @@
 package geekcode.takatuf.Controller;
 
-import geekcode.takatuf.Entity.Product;
-import geekcode.takatuf.Enums.ProductCategory;
 import geekcode.takatuf.Service.ProductService;
-import lombok.RequiredArgsConstructor;
+import geekcode.takatuf.dto.MessageResponse;
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.product.ProductResponse;
+import geekcode.takatuf.Repository.ProductRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import geekcode.takatuf.Repository.ProductRepository;
-import org.springframework.web.multipart.MultipartFile;
-
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import geekcode.takatuf.dto.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/product")
@@ -31,17 +28,17 @@ public class ProductController {
             @RequestParam("name") String name,
             @RequestParam("description") String description,
             @RequestParam("price") double price,
-            @RequestParam("category") ProductCategory category,
+            @RequestParam("category") Long categoryId,
             @RequestParam("quantity") Integer quantity,
             @RequestParam("image") MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
+        if (userDetails == null)
             return ResponseEntity.status(401).build();
-        }
 
-        ProductResponse response = productService.addProduct(storeId, name, description,
-                BigDecimal.valueOf(price), category, quantity, image, userDetails.getUsername());
+        ProductResponse response = productService.addProduct(
+                storeId, name, description, BigDecimal.valueOf(price),
+                categoryId, quantity, image, userDetails.getUsername());
 
         return ResponseEntity.ok(response);
     }
@@ -49,20 +46,19 @@ public class ProductController {
     @PostMapping("/update/{productId}")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable Long productId,
-            @RequestParam(value = "name") String name,
-            @RequestParam(value = "description") String description,
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
             @RequestParam(value = "price", required = false) BigDecimal price,
             @RequestParam(value = "quantity", required = false) Integer quantity,
-            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "category", required = false) Long categoryId,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
+        if (userDetails == null)
             return ResponseEntity.status(401).build();
-        }
 
         ProductResponse response = productService.updateProduct(
-                productId, name, description, price, category, quantity, image, userDetails.getUsername());
+                productId, name, description, price, categoryId, quantity, image, userDetails.getUsername());
 
         return ResponseEntity.ok(response);
     }
@@ -72,9 +68,8 @@ public class ProductController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
+        if (userDetails == null)
             return ResponseEntity.status(401).build();
-        }
 
         ProductResponse product = productService.getProductById(id);
         return ResponseEntity.ok(product);
@@ -83,19 +78,19 @@ public class ProductController {
     @GetMapping("/store/{storeId}/products")
     public ResponseEntity<PaginatedResponse<ProductResponse>> getProducts(
             @PathVariable Long storeId,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "per_page", defaultValue = "10") int perPage,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "ASC") String sort_dir,
+            @RequestParam(defaultValue = "ASC") String sortDir,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
+        if (userDetails == null)
             return ResponseEntity.status(401).build();
-        }
 
-        PaginatedResponse<ProductResponse> result = productService.getProductsByStoreId(storeId, page, perPage, q, sort,
-                sort_dir);
+        PaginatedResponse<ProductResponse> result = productService.getProductsByStoreId(
+                storeId, page, perPage, q, sort, sortDir);
+
         return ResponseEntity.ok(result);
     }
 
@@ -104,29 +99,29 @@ public class ProductController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
+        if (userDetails == null)
             return ResponseEntity.status(401).build();
-        }
 
         productService.deleteProduct(id, userDetails.getUsername());
-
-        return ResponseEntity.ok(new MessageResponse("Product deleted successfully"));
+        return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/categories")
-    public ResponseEntity<List<String>> getAllCategories() {
-        List<String> categories = Arrays.stream(ProductCategory.values())
-                .map(Enum::name)
-                .toList();
-        return ResponseEntity.ok(categories);
+    @GetMapping("/store/{storeId}/all-products")
+    public ResponseEntity<List<ProductResponse>> getAllStoreProducts(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null)
+            return ResponseEntity.status(401).build();
+
+        List<ProductResponse> products = productService.getAllProductsByStoreId(storeId);
+        return ResponseEntity.ok(products);
     }
 
-    @GetMapping("/products")
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        List<Product> products = productRepository.findAll();
-        List<ProductResponse> response = products.stream()
-                .map(productService::buildProductResponse)
-                .toList();
-        return ResponseEntity.ok(response);
+    @GetMapping("/{categoryId}/products")
+    public ResponseEntity<List<ProductResponse>> getProductsByCategoryId(@PathVariable Long id) {
+        List<ProductResponse> products = productService.getProductsByCategoryId(id);
+        return ResponseEntity.ok(products);
     }
+
 }

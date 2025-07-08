@@ -21,28 +21,19 @@ public class SliderController {
 
     private final SliderService sliderService;
 
-    @PostMapping("/add")
+    @PostMapping(value = "/add", consumes = "multipart/form-data")
     public ResponseEntity<SliderResponse> createSlider(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SliderRequest request) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
+            @ModelAttribute SliderRequest request) {
         SliderResponse response = sliderService.createSlider(userDetails.getUsername(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/update/{id}")
+    @PutMapping(value = "/update/{id}", consumes = "multipart/form-data")
     public ResponseEntity<SliderResponse> updateSlider(
-            @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SliderRequest request) {
-
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
+            @PathVariable Long id,
+            @ModelAttribute SliderRequest request) {
         SliderResponse response = sliderService.updateSlider(id, userDetails.getUsername(), request);
         return ResponseEntity.ok(response);
     }
