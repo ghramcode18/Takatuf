@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notification Watcher</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h2>👀 Notification Watch</h2>
+<div id="log"></div>
+
+<script>
+        const token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiZ2hyYW0xOEBnbWFpbC5jb20iLCJzdWIiOiJnaHJhbTE4QGdtYWlsLmNvbSIsImlhdCI6MTc1MTgzNzYxMSwiZXhwIjoxNzUxODM4NTExfQ.MssoH1vBCR6-4qySEU9SLHa-_UMDqlyEaz5m4H0s4Ag"; // التوكن تبع المستخدم يلي بده يراقب
+
+        const socket = new SockJS("http://localhost:8080/ws?token=" + token);
+        const client = Stomp.over(socket);
+
+client.debug = function (str) {
+    console.log("[DEBUG]", str);
+};
+
+        client.connect({}, function (frame) {
+            console.log("✅ Connected:", frame);
+            log("🔗 WebSocket connected");
+
+            client.subscribe("/user/queue/notifications", function (message) {
+                const data = JSON.parse(message.body);
+                console.log("🔔 إشعار وصل:", data);
+                log("🔔 إشعار: " + JSON.stringify(data));
+            });
+        });
+
+        function log(text) {
+            const logDiv = document.getElementById("log");
+            const entry = document.createElement("p");
+            entry.textContent = text;
+            logDiv.appendChild(entry);
+        }
+    </script>
+</body>
+</html>
