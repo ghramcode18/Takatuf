@@ -509,11 +509,10 @@ public class OrderService {
         }
 
         public List<Order> getOrderbyId(Long userId,Long orderId){
-
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-                List<Order> myOrder =  orderRepository.(userId);
+                List<Order> myOrder =  orderRepository.findByUserIdAndId(userId, orderId);
                 return myOrder;
         }
 }

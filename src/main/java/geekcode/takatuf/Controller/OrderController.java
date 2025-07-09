@@ -151,7 +151,7 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/getOrderbyId")
+    @GetMapping("/{orderId}")
     public ResponseEntity<List<Order>> getOrderbyId(
             @PathVariable Long orderId,
             @AuthenticationPrincipal UserDetails userDetails) {
