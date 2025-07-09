@@ -1,5 +1,6 @@
 package geekcode.takatuf.Controller;
 
+import geekcode.takatuf.Entity.Order;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Enums.OrderType;
 import geekcode.takatuf.Enums.PaymentMethod;
@@ -138,6 +139,24 @@ public class OrderController {
             @RequestParam Long pendingOrderId) {
         Long userId = extractUserId(userDetails);
         List<OrderResponse> response = orderService.confirmPendingOrder(userId, pendingOrderId);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/getMyOrder")
+    public ResponseEntity<List<Order>> getMyOrder(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = extractUserId(userDetails);
+        List<Order> response = orderService.getMyOrder(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/getOrderbyId")
+    public ResponseEntity<List<Order>> getOrderbyId(
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = extractUserId(userDetails);
+                List<Order> response = orderService.getOrderbyId(userId,orderId);
         return ResponseEntity.ok(response);
     }
 

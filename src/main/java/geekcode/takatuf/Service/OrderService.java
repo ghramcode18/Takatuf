@@ -498,4 +498,22 @@ public class OrderService {
                                 .build();
         }
 
+
+        public List<Order> getMyOrder(Long userId){
+
+                User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+               List<Order> myOrder =  orderRepository.findByUserId(userId);
+                return myOrder;
+        }
+
+        public List<Order> getOrderbyId(Long userId,Long orderId){
+
+                User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+                List<Order> myOrder =  orderRepository.(userId);
+                return myOrder;
+        }
 }
