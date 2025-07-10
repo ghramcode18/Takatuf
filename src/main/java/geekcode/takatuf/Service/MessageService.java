@@ -42,6 +42,12 @@ public class MessageService {
         Chat chat = chatRepository.findById(dto.getChatId())
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
 
+        // 👇 نحاول استرجاع الشات للمُرسل إذا كان محذوف
+        restoreChatIfNeeded(sender, chat);
+
+        // 👇 نحاول استرجاع الشات للمُستقبِل إذا كان محذوف
+        restoreChatIfNeeded(receiver, chat);
+
         Message message = Message.builder()
                 .chat(chat)
                 .sender(sender)
@@ -50,26 +56,9 @@ public class MessageService {
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        // تحديث منطق الحذف والاسترجاع
-        deletedChatRepository.findByUserAndChat(sender, chat)
-                .ifPresent(deleted -> {
-                    if (deleted.getRestoredAt() == null) {
-                        deleted.setRestoredAt(LocalDateTime.now().minusMinutes(1));
-                        deletedChatRepository.save(deleted);
-                    }
-                });
-
-        deletedChatRepository.findByUserAndChat(receiver, chat)
-                .ifPresent(deleted -> {
-                    if (deleted.getRestoredAt() == null) {
-                        deleted.setRestoredAt(LocalDateTime.now().minusMinutes(1));
-                        deletedChatRepository.save(deleted);
-                    }
-                });
-
         Message savedMessage = messageRepository.save(message);
 
-        // إرسال إشعار
+        // 🔔 إرسال إشعار للمستلم
         messagingTemplate.convertAndSendToUser(
                 String.valueOf(receiver.getId()),
                 "/queue/notifications",
@@ -79,6 +68,16 @@ public class MessageService {
         return savedMessage;
     }
 
+
+    private void restoreChatIfNeeded(User user, Chat chat) {
+        deletedChatRepository.findByUserAndChat(user, chat)
+                .ifPresent(deleted -> {
+                    if (deleted.getRestoredAt() == null) {
+                        deleted.setRestoredAt(LocalDateTime.now());
+                        deletedChatRepository.save(deleted);
+                    }
+                });
+    }
 
     @Transactional
     public Message editMessage(Long messageId, Long userId, String newContent) {
@@ -126,29 +125,29 @@ public class MessageService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Optional<DeletedChat> deletedChatOpt = deletedChatRepository.findByUserAndChat(user, chat);
+        List<Message> messages = messageRepository.findByChatIdAndTimestampBetweenAndDeletedFalseOrderByTimestampAsc(
+                chatId, startDate, endDate
+        );
 
-        if (deletedChatOpt.isPresent()) {
-            DeletedChat deletedChat = deletedChatOpt.get();
-
-            // إذا ما تم استرجاع الشات، ما نرجع أي رسائل
-            if (deletedChat.getRestoredAt() == null) {
+        var deletedOpt = deletedChatRepository.findByUserAndChat(user, chat);
+        if (deletedOpt.isPresent()) {
+            var deleted = deletedOpt.get();
+            if (deleted.getRestoredAt() != null) {
+                // فلترة الرسائل يلي قبل الاستعادة
+                messages = messages.stream()
+                        .filter(msg -> msg.getTimestamp().isAfter(deleted.getRestoredAt()))
+                        .toList();
+            } else {
+                // حذف بدون استعادة
                 return List.of();
             }
-
-            // نرجّع فقط الرسائل بعد وقت الاسترجاع
-            startDate = deletedChat.getRestoredAt().isAfter(startDate)
-                    ? deletedChat.getRestoredAt()
-                    : startDate;
         }
-
-        List<Message> messages = messageRepository
-                .findByChatIdAndTimestampBetweenAndDeletedFalseOrderByTimestampAsc(chatId, startDate, endDate);
 
         return messages.stream()
                 .map(MessagesResponse::fromEntity)
                 .toList();
     }
+
 
     public List<MessagesResponse> getMessagesForChat(Long chatId, Long userId, int monthsAgo) {
         Chat chat = chatRepository.findById(chatId)

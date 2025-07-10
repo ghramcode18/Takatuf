@@ -73,20 +73,23 @@ public class ChatController {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        boolean alreadyDeleted = deletedChatRepository.existsByChatIdAndUserId(chatId, userId);
-        if (alreadyDeleted) {
-            return ResponseEntity.ok("Chat already deleted.");
-        }
-        chat.setDeleted(true);
-        chatRepository.save(chat);
-        DeletedChat deleted = DeletedChat.builder()
-                .chat(chat)
-                .user(user)
-                .deletedAt(LocalDateTime.now())
-                .build();
-
-
-        deletedChatRepository.save(deleted);
+        deletedChatRepository.findByUserAndChat(user, chat)
+                .ifPresentOrElse(
+                        deleted -> {
+                            deleted.setDeletedAt(LocalDateTime.now());
+                            deleted.setRestoredAt(null);
+                            deletedChatRepository.save(deleted);
+                        },
+                        () -> {
+                            DeletedChat deletedChat = DeletedChat.builder()
+                                    .user(user)
+                                    .chat(chat)
+                                    .deletedAt(LocalDateTime.now())
+                                    .restoredAt(null)
+                                    .build();
+                            deletedChatRepository.save(deletedChat);
+                        }
+                );
 
         return ResponseEntity.ok("Chat deleted successfully.");
     }
