@@ -53,7 +53,16 @@ public class MessageService {
         deletedChatRepository.findByUserAndChat( receiver,chat)
                 .ifPresent(deleted -> deletedChatRepository.delete(deleted));
 
-        return messageRepository.save(message);
+        Message savedMessage = messageRepository.save(message);
+
+        System.out.println("🔔 Sending notification to user: " + receiver.getId());
+        messagingTemplate.convertAndSendToUser(
+                String.valueOf(receiver.getId()),
+                "/queue/notifications",
+                new ChatMessageNotification("new_message", message.getId())
+        );
+
+        return savedMessage;
     }
 
     @Transactional

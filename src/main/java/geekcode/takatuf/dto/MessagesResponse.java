@@ -17,6 +17,8 @@ public class MessagesResponse {
     private boolean deleted;
     private String senderName;
     private String receiverName;
+    private Long senderId;
+    private Long receiverId;
     private LocalDateTime timestamp;
 
     public static MessagesResponse fromEntity(Message message) {
@@ -26,6 +28,8 @@ public class MessagesResponse {
                 .deleted(message.isDeleted())
                 .senderName(message.getSender().getName())
                 .receiverName(message.getReceiver().getName())
+                .receiverId(message.getReceiver().getId())
+                .senderId(message.getSender().getId())
                 .timestamp(message.getTimestamp())
                 .build();
     }
