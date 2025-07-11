@@ -64,6 +64,7 @@ public class Order {
 
     @ManyToOne
     @JoinColumn(name = "category_id")
+    @JsonIgnore
     private Category category;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
