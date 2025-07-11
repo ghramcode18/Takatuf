@@ -2,6 +2,7 @@ package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.ComplaintService;
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.complaint.ComplaintDto.*;
 import lombok.RequiredArgsConstructor;
 import geekcode.takatuf.Entity.*;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import java.util.List;
+import geekcode.takatuf.Enums.*;
 
 @RestController
 @RequestMapping("/api/complaints")
@@ -60,7 +62,7 @@ public class ComplaintController {
         return ResponseEntity.ok(complaints);
     }
 
-    @GetMapping 
+    @GetMapping
     public ResponseEntity<List<ComplaintResponse>> getComplaints(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) Long userId) {
@@ -69,4 +71,21 @@ public class ComplaintController {
         List<ComplaintResponse> complaints = complaintService.getComplaints(user.getId(), userId);
         return ResponseEntity.ok(complaints);
     }
+
+    @GetMapping("/by-user-type")
+    public ResponseEntity<PaginatedResponse<ComplaintResponse>> getComplaintsByUserTypePaginated(
+            @RequestParam UserType userType,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int perPage,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "DESC") String sortDir,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = getAuthenticatedUser(userDetails);
+        PaginatedResponse<ComplaintResponse> response = complaintService.getComplaintsByUserTypePaginated(
+                user.getId(), userType, page, perPage, sort, sortDir);
+
+        return ResponseEntity.ok(response);
+    }
+
 }

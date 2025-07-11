@@ -26,7 +26,7 @@ public class Slider {
     private String type; // "STORE", "PRODUCT", "LINK", "NONE"
 
     private boolean active;
-    private int priority;
+    private Integer priority;
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;

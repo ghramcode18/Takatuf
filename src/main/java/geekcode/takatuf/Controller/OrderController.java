@@ -141,4 +141,26 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/custom-orders/buyer")
+    public ResponseEntity<List<OrderResponse>> getCustomOrdersByBuyer(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long buyerId = extractUserId(userDetails);
+        return ResponseEntity.ok(orderService.getCustomOrdersByBuyer(buyerId));
+    }
+
+    @GetMapping("/custom-orders/seller")
+    public ResponseEntity<List<OrderResponse>> getCustomOrdersForSeller(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long sellerId = extractUserId(userDetails);
+        return ResponseEntity.ok(orderService.getCustomOrdersForSeller(sellerId));
+
+    }
+
+    @GetMapping("/custom-orders/{orderId}")
+    public ResponseEntity<OrderResponse> getCustomOrderById(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId) {
+        String email = userDetails.getUsername();
+        return ResponseEntity.ok(orderService.getCustomOrderById(orderId, email));
+    }
 }

@@ -35,6 +35,8 @@ public class Product {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    @Column(name = "group_discount_percentage")
+    private BigDecimal groupDiscountPercentage;
 
     @OneToMany(mappedBy = "product")
     private List<ProductReview> productReviews;

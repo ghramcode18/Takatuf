@@ -3,10 +3,16 @@ package geekcode.takatuf.Service;
 import geekcode.takatuf.Entity.Category;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Repository.CategoryRepository;
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.category.CategoryDto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -20,15 +26,17 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
 
+    private final String uploadDir = "uploads/categories/";
+
     public CategoryResponse createCategory(CategoryRequest request) {
         validateCategoryRequest(request);
 
-        String imagePath = saveImage(request.getImage());
+        String imageUrl = saveImage(request.getImage());
 
         Category category = Category.builder()
                 .name(request.getName())
                 .description(request.getDescription())
-                .image(imagePath)
+                .image(imageUrl)
                 .active(Optional.ofNullable(request.getActive()).orElse(true))
                 .build();
 
@@ -39,12 +47,20 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new BadRequestException("Category not found"));
 
-        Optional.ofNullable(request.getName()).ifPresent(category::setName);
+        Optional.ofNullable(request.getName()).ifPresent(newName -> {
+            if (!newName.equalsIgnoreCase(category.getName()) &&
+                    categoryRepository.existsByNameIgnoreCase(newName)) {
+                throw new BadRequestException("Category name already exists");
+            }
+            category.setName(newName);
+        });
+
         Optional.ofNullable(request.getDescription()).ifPresent(category::setDescription);
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
-            String imagePath = saveImage(request.getImage());
-            category.setImage(imagePath);
+            deleteImageIfExists(category.getImage());
+            String imageUrl = saveImage(request.getImage());
+            category.setImage(imageUrl);
         }
 
         Optional.ofNullable(request.getActive()).ifPresent(category::setActive);
@@ -53,9 +69,10 @@ public class CategoryService {
     }
 
     public void deleteCategory(Long id) {
-        if (!categoryRepository.existsById(id)) {
-            throw new BadRequestException("Category not found");
-        }
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new BadRequestException("Category not found"));
+
+        deleteImageIfExists(category.getImage());
         categoryRepository.deleteById(id);
     }
 
@@ -63,6 +80,25 @@ public class CategoryService {
         return categoryRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    public PaginatedResponse<CategoryResponse> getCategoriesPaginated(
+            int page,
+            int perPage,
+            String sort,
+            String sortDir) {
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
+
+        Page<Category> pageResult = categoryRepository.findAll(pageable);
+
+        List<CategoryResponse> data = pageResult.getContent()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return new PaginatedResponse<>(data, pageResult.getTotalElements(), page, perPage);
     }
 
     public CategoryResponse getCategoryById(Long id) {
@@ -82,28 +118,55 @@ public class CategoryService {
     }
 
     private void validateCategoryRequest(CategoryRequest request) {
-        if (request.getName() == null || request.getName().isBlank()) {
+        if (isBlank(request.getName())) {
             throw new BadRequestException("Category name is required");
         }
+
         if (request.getImage() == null || request.getImage().isEmpty()) {
             throw new BadRequestException("Category image is required");
         }
+
+        boolean exists = categoryRepository.existsByNameIgnoreCase(request.getName());
+        if (exists) {
+            throw new BadRequestException("Category name already exists");
+        }
     }
 
-    private String saveImage(MultipartFile image) {
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private String saveImage(MultipartFile file) {
         try {
-            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/categories/");
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path uploadPath = Paths.get(uploadDir);
+
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
             Path filePath = uploadPath.resolve(fileName);
-            Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            return "/uploads/categories/" + fileName;
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/categories/")
+                    .path(fileName)
+                    .toUriString();
+
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save category image", e);
+            throw new BadRequestException("Failed to save category image");
+        }
+    }
+
+    private void deleteImageIfExists(String imageUrl) {
+        if (imageUrl == null || !imageUrl.contains("/"))
+            return;
+
+        try {
+            String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+            Path path = Paths.get(uploadDir).resolve(fileName);
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
         }
     }
 }
