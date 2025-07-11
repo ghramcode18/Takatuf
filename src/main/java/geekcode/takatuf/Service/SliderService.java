@@ -1,13 +1,18 @@
 package geekcode.takatuf.Service;
 
+import geekcode.takatuf.dto.PaginatedResponse;
+import geekcode.takatuf.dto.section.SectionResponse;
 import geekcode.takatuf.dto.slider.SliderRequest;
 import geekcode.takatuf.dto.slider.SliderResponse;
 import geekcode.takatuf.dto.slider.SliderSortRequest;
+import geekcode.takatuf.Entity.Section;
 import geekcode.takatuf.Entity.Slider;
+import org.springframework.data.domain.*;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Repository.SliderRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,15 +30,16 @@ public class SliderService {
 
     public SliderResponse createSlider(String username, SliderRequest request) {
         String imageUrl = saveImage(request.getImage());
+        String targetUrl = resolveTargetUrl(request);
 
         Slider slider = Slider.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .imageUrl(imageUrl)
-                .targetUrl(request.getTargetUrl())
+                .targetUrl(targetUrl)
                 .type(request.getType())
-                .active(request.isActive())
-                .priority(request.getPriority())
+                .active(request.getActive() != null ? request.getActive() : true)
+                .priority(request.getPriority() != null ? request.getPriority() : 0)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .build();
@@ -50,9 +56,6 @@ public class SliderService {
             slider.setTitle(request.getTitle());
         if (request.getDescription() != null)
             slider.setDescription(request.getDescription());
-
-        if (request.getTargetUrl() != null)
-            slider.setTargetUrl(request.getTargetUrl());
         if (request.getType() != null)
             slider.setType(request.getType());
         if (request.getPriority() != null)
@@ -62,13 +65,34 @@ public class SliderService {
         if (request.getEndDate() != null)
             slider.setEndDate(request.getEndDate());
 
-        slider.setActive(request.isActive());
+        if (request.getActive() != null)
+            slider.setActive(request.getActive());
+
+        if (request.getType() != null || request.getTargetId() != null || request.getLinkUrl() != null) {
+            String targetUrl = resolveTargetUrl(request);
+            slider.setTargetUrl(targetUrl);
+        }
+
         if (request.getImage() != null && !request.getImage().isEmpty()) {
             String imageUrl = saveImage(request.getImage());
             slider.setImageUrl(imageUrl);
         }
+
         Slider updated = sliderRepository.save(slider);
         return mapToResponse(updated);
+    }
+
+    private String resolveTargetUrl(SliderRequest request) {
+        String type = request.getType();
+        if (type == null)
+            return null;
+
+        return switch (type.toUpperCase()) {
+            case "STORE" -> request.getTargetId() != null ? "/stores/" + request.getTargetId() : null;
+            case "PRODUCT" -> request.getTargetId() != null ? "/products/" + request.getTargetId() : null;
+            case "LINK", "NONE" -> request.getLinkUrl();
+            default -> null;
+        };
     }
 
     private String saveImage(MultipartFile image) {
@@ -95,6 +119,17 @@ public class SliderService {
         Slider slider = sliderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Slider not found"));
         return mapToResponse(slider);
+    }
+
+    public PaginatedResponse<SliderResponse> getAllSlidersPaginated(int page, int perPage, String sort,
+            String sortDir) {
+        Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
+
+        Page<Slider> slidersPage = sliderRepository.findAll(pageable);
+        List<SliderResponse> data = slidersPage.map(this::mapToResponse).getContent();
+
+        return new PaginatedResponse<>(data, slidersPage.getTotalElements(), page, perPage);
     }
 
     public List<SliderResponse> getAllSliders() {

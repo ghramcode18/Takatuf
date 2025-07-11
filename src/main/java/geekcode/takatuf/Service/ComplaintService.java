@@ -4,8 +4,13 @@ import geekcode.takatuf.Entity.*;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.*;
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.complaint.ComplaintDto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import geekcode.takatuf.Enums.*;
 import java.time.LocalDateTime;
@@ -92,26 +97,46 @@ public class ComplaintService {
                                 .orElseThrow(() -> new BadRequestException("Requester not found"));
 
                 if (requester.getType() == UserType.ADMIN) {
-                        if (targetUserId != null) {
-                                return complaintRepository.findBySubmittedBy_Id(targetUserId)
-                                                .stream()
-                                                .map(this::mapToResponse)
-                                                .collect(Collectors.toList());
-                        } else {
-                                return complaintRepository.findAll()
-                                                .stream()
-                                                .map(this::mapToResponse)
-                                                .collect(Collectors.toList());
-                        }
+                        List<Complaint> complaints = (targetUserId != null)
+                                        ? complaintRepository.findBySubmittedBy_Id(targetUserId)
+                                        : complaintRepository.findAll();
+
+                        return complaints.stream().map(this::mapToResponse).collect(Collectors.toList());
                 }
 
-                if (targetUserId != null && !targetUserId.equals(requesterId)) {
-                        throw new UnauthorizedException("You are not authorized to view other users' complaints");
+                if (targetUserId != null && !targetUserId.equals(requester.getId())) {
+                        throw new UnauthorizedException("You are not authorized to view complaints of other users");
                 }
-                return complaintRepository.findBySubmittedBy_Id(requesterId)
+
+                return complaintRepository.findBySubmittedBy_Id(requester.getId())
                                 .stream()
                                 .map(this::mapToResponse)
                                 .collect(Collectors.toList());
+        }
+
+        public PaginatedResponse<ComplaintResponse> getComplaintsByUserTypePaginated(
+                        Long requesterId,
+                        UserType userType,
+                        int page,
+                        int perPage,
+                        String sort,
+                        String sortDir) {
+
+                User requester = userRepository.findById(requesterId)
+                                .orElseThrow(() -> new BadRequestException("Requester not found"));
+
+                if (requester.getType() != UserType.ADMIN) {
+                        throw new UnauthorizedException("Only admins can access complaints by user type");
+                }
+
+                Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+                Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
+
+                Page<Complaint> pageResult = complaintRepository.findBySubmittedBy_Type(userType, pageable);
+
+                List<ComplaintResponse> data = pageResult.map(this::mapToResponse).getContent();
+
+                return new PaginatedResponse<>(data, pageResult.getTotalElements(), page, perPage);
         }
 
         private ComplaintResponse mapToResponse(Complaint complaint) {

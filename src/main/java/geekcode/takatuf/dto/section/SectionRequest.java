@@ -3,6 +3,7 @@ package geekcode.takatuf.dto.section;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class SectionRequest {
@@ -12,4 +13,5 @@ public class SectionRequest {
     private Integer sortOrder;
     private Boolean active;
     private MultipartFile image;
+    private List<Long> ids;
 }

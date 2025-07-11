@@ -95,7 +95,7 @@ public class StoreService {
 
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/");
+            Path uploadPath = Paths.get("uploads/stores");
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -103,7 +103,7 @@ public class StoreService {
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            return "/uploads/" + fileName;
+            return "/uploads/stores" + fileName;
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image", e);
         }
@@ -115,17 +115,16 @@ public class StoreService {
         return mapToResponse(store);
     }
 
-   public List<StoreResponse> getStoresByOwner(String username) {
-    User user = userRepository.findByEmail(username)
-            .orElseThrow(() -> new BadRequestException("User not found."));
+    public List<StoreResponse> getStoresByOwner(String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new BadRequestException("User not found."));
 
-    List<Store> stores = storeRepository.findByOwner_Id(user.getId());
+        List<Store> stores = storeRepository.findByOwner_Id(user.getId());
 
-    return stores.stream()
-            .map(this::mapToResponse)
-            .toList();
-}
-
+        return stores.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
     private StoreResponse mapToResponse(Store store) {
         List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());
@@ -167,6 +166,5 @@ public class StoreService {
                 .map(this::mapToResponse)
                 .toList();
     }
-
 
 }

@@ -261,6 +261,38 @@ public class OrderService {
                                 .build();
         }
 
+        public OrderResponse getCustomOrderById(Long orderId, String username) {
+                User user = userRepository.findByEmail(username)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+                boolean isOwner = order.getUser().getId().equals(user.getId());
+                boolean isSellerWithOffer = customOrderOfferRepository.existsByOrderIdAndSellerEmail(orderId, username);
+
+                if (!isOwner && !isSellerWithOffer)
+                        throw new UnauthorizedException("You are not allowed to view this order");
+
+                return mapToOrderResponse(order);
+        }
+
+        public List<OrderResponse> getCustomOrdersByBuyer(Long buyerId) {
+                List<Order> orders = orderRepository.findByUserIdAndOrderType(buyerId, OrderType.CUSTOM);
+                return orders.stream().map(this::mapToOrderResponse).toList();
+        }
+
+        public List<OrderResponse> getCustomOrdersForSeller(Long sellerId) {
+                List<CustomOrderOffer> offers = customOrderOfferRepository.findBySellerId(sellerId);
+                List<Order> orders = offers.stream()
+                                .map(CustomOrderOffer::getOrder)
+                                .distinct()
+                                .filter(o -> o.getOrderType() == OrderType.CUSTOM)
+                                .toList();
+
+                return orders.stream().map(this::mapToOrderResponse).toList();
+        }
+
         @Transactional
         public Long createOrGetPendingOrder(Long userId, PlaceOrderRequest request) {
                 User user = userRepository.findById(userId)

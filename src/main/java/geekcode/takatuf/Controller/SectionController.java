@@ -1,6 +1,7 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Service.SectionService;
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.section.SectionRequest;
 import geekcode.takatuf.dto.section.SectionResponse;
 import geekcode.takatuf.dto.section.SectionSortRequest;
@@ -49,9 +50,22 @@ public class SectionController {
         return ResponseEntity.ok(sectionService.getSectionById(id));
     }
 
+    @GetMapping("/paginated")
+    public ResponseEntity<PaginatedResponse<SectionResponse>> getPaginatedSections(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int perPage,
+             @RequestParam(defaultValue = "sortOrder") String sort,
+            @RequestParam(defaultValue = "ASC") String sortDir) {
+
+        PaginatedResponse<SectionResponse> response = sectionService.getAllSectionsPaginated(page, perPage, sort,
+                sortDir);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/all")
     public ResponseEntity<List<SectionResponse>> getAllSections() {
-        return ResponseEntity.ok(sectionService.getAllSections());
+        List<SectionResponse> sections = sectionService.getAllSections();
+        return ResponseEntity.ok(sections);
     }
 
     @DeleteMapping("/delete/{id}")

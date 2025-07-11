@@ -9,10 +9,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.nio.file.*;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
+import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +25,11 @@ public class ProductService {
     private final StoreRepository storeRepository;
     private final CategoryRepository categoryRepository;
 
+    private final String uploadDir = "uploads/products/";
+
     public ProductResponse addProduct(Long storeId, String name, String description, BigDecimal price,
-            Long categoryId, Integer quantity, MultipartFile imageFile, String currentUsername) {
+            BigDecimal groupDiscountPercentage, Long categoryId, Integer quantity, MultipartFile imageFile,
+            String currentUsername) {
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new BadRequestException("Store not found"));
@@ -45,6 +51,7 @@ public class ProductService {
                 .name(name)
                 .description(description)
                 .price(price)
+                .groupDiscountPercentage(groupDiscountPercentage)
                 .image(imageUrl)
                 .quantity(quantity)
                 .category(category)
@@ -57,6 +64,7 @@ public class ProductService {
     }
 
     public ProductResponse updateProduct(Long productId, String name, String description, BigDecimal price,
+            BigDecimal groupDiscountPercentage,
             Long categoryId, Integer quantity, MultipartFile imageFile, String currentUsername) {
 
         Product product = productRepository.findById(productId)
@@ -77,6 +85,9 @@ public class ProductService {
 
         if (price != null && price.compareTo(BigDecimal.ZERO) > 0) {
             product.setPrice(price);
+        }
+        if (groupDiscountPercentage != null && groupDiscountPercentage.compareTo(BigDecimal.ZERO) >= 0) {
+            product.setGroupDiscountPercentage(groupDiscountPercentage);
         }
 
         if (quantity != null && quantity >= 0) {
@@ -127,11 +138,18 @@ public class ProductService {
     }
 
     public List<ProductResponse> getAllProductsByStoreId(Long storeId) {
-        Store store = storeRepository.findById(storeId)
+        storeRepository.findById(storeId)
                 .orElseThrow(() -> new BadRequestException("Store not found"));
 
         List<Product> products = productRepository.findByStoreId(storeId);
 
+        return products.stream()
+                .map(this::buildProductResponse)
+                .toList();
+    }
+
+    public List<ProductResponse> getProductsByCategoryId(Long categoryId) {
+        List<Product> products = productRepository.findByCategoryId(categoryId);
         return products.stream()
                 .map(this::buildProductResponse)
                 .toList();
@@ -152,12 +170,6 @@ public class ProductService {
         }
     }
 
-    public List<ProductResponse> getProductsByCategoryId(Long categoryId) {
-        List<Product> products = productRepository.findByCategoryId(categoryId);
-        return products.stream()
-                .map(this::buildProductResponse)
-                .toList();
-    }
     private ProductResponse buildProductResponse(Product product) {
         Store store = product.getStore();
         User owner = store.getOwner();
@@ -177,9 +189,10 @@ public class ProductService {
                 .name(product.getName())
                 .description(product.getDescription())
                 .price(product.getPrice())
+                .groupDiscountPercentage(product.getGroupDiscountPercentage())
                 .image(product.getImage())
                 .quantity(product.getQuantity())
-                .category(product.getCategory().getName())
+                .category(product.getCategory() != null ? product.getCategory().getName() : null)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .storeId(store.getId())
@@ -193,6 +206,24 @@ public class ProductService {
     }
 
     private String saveImage(MultipartFile file) {
-        return "https://products/images/" + file.getOriginalFilename();
+        try {
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path uploadPath = Paths.get(uploadDir);
+
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/products/")
+                    .path(fileName)
+                    .toUriString();
+
+        } catch (IOException e) {
+            throw new BadRequestException("Failed to save product image");
+        }
     }
 }

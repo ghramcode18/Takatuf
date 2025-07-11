@@ -13,6 +13,7 @@ public class ProductResponse {
     private String name;
     private String description;
     private BigDecimal price;
+    private BigDecimal groupDiscountPercentage;
     private String image;
     private String category;
     private Integer quantity;

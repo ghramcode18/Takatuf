@@ -1,6 +1,7 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Service.CategoryService;
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.category.CategoryDto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -31,7 +32,7 @@ public class CategoryController {
         return ResponseEntity.ok(category);
     }
 
-    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CategoryResponse> updateCategory(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
@@ -58,6 +59,18 @@ public class CategoryController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/paginated")
+    public ResponseEntity<PaginatedResponse<CategoryResponse>> getPaginatedCategories(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int perPage,
+            @RequestParam(defaultValue = "name") String sort,
+            @RequestParam(defaultValue = "ASC") String sortDir) {
+
+        PaginatedResponse<CategoryResponse> response = categoryService.getCategoriesPaginated(page, perPage, sort,
+                sortDir);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/all")
     public ResponseEntity<List<CategoryResponse>> getAllCategories() {
         List<CategoryResponse> categories = categoryService.getAllCategories();
@@ -69,4 +82,5 @@ public class CategoryController {
         CategoryResponse category = categoryService.getCategoryById(id);
         return ResponseEntity.ok(category);
     }
+
 }
