@@ -1,5 +1,6 @@
 package geekcode.takatuf.Controller;
 
+import geekcode.takatuf.Entity.Order;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Enums.OrderType;
 import geekcode.takatuf.Enums.PaymentMethod;
