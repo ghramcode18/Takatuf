@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 import java.util.UUID;
 import java.nio.file.Path;
 import java.io.IOException;
@@ -106,5 +108,12 @@ public class UserService {
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
         return convertToUserResponse(user);
+    }
+
+
+    public List<User> findAllExcept(Long currentUserId) {
+        return userRepository.findAll().stream()
+                .filter(user -> !user.getId().equals(currentUserId))
+                .collect(Collectors.toList());
     }
 }
