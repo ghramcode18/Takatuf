@@ -32,22 +32,26 @@ public class SecurityConfig {
         return builder.build();
     }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .cors()
-            .and()
-            .csrf().disable()
-            .authorizeHttpRequests()
-                .requestMatchers(new AntPathRequestMatcher("/api/auth/**"),
-                 new AntPathRequestMatcher("/ws/**") )
-                .permitAll()
-                .anyRequest().authenticated()
-            .and()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+   @Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .cors()
+        .and()
+        .csrf().disable()
+        .authorizeHttpRequests()
+            .requestMatchers(
+                    "/api/auth/**",
+                    "/ws/**",
+                    "/uploads/**"   
+            ).permitAll()
+            .anyRequest().authenticated()
+        .and()
+        .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+    return http.build();
+}
+
 }
