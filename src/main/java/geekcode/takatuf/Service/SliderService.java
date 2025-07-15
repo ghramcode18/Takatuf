@@ -5,47 +5,67 @@ import geekcode.takatuf.dto.section.SectionResponse;
 import geekcode.takatuf.dto.slider.SliderRequest;
 import geekcode.takatuf.dto.slider.SliderResponse;
 import geekcode.takatuf.dto.slider.SliderSortRequest;
+import geekcode.takatuf.Entity.Product;
 import geekcode.takatuf.Entity.Section;
 import geekcode.takatuf.Entity.Slider;
+import geekcode.takatuf.Entity.Store;
+
 import org.springframework.data.domain.*;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
+import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.SliderRepository;
+import geekcode.takatuf.Repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 import java.util.UUID;
 import java.io.IOException;
 import java.nio.file.*;
-import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class SliderService {
-
+    private final ProductRepository productRepository;
+    private final StoreRepository storeRepository;
     private final SliderRepository sliderRepository;
 
     public SliderResponse createSlider(String username, SliderRequest request) {
         String imageUrl = saveImage(request.getImage());
-        String targetUrl = resolveTargetUrl(request);
 
-        Slider slider = Slider.builder()
+        Slider.SliderBuilder builder = Slider.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .imageUrl(imageUrl)
-                .targetUrl(targetUrl)
                 .type(request.getType())
                 .active(request.getActive() != null ? request.getActive() : true)
                 .priority(request.getPriority() != null ? request.getPriority() : 0)
                 .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
-                .build();
+                .endDate(request.getEndDate());
 
-        Slider saved = sliderRepository.save(slider);
-        return mapToResponse(saved);
+        switch (request.getType().toUpperCase()) {
+            case "STORE" -> {
+                Store store = storeRepository.findById(request.getTargetId())
+                        .orElseThrow(
+                                () -> new BadRequestException("Store not found with id: " + request.getTargetId()));
+                builder.store(store);
+            }
+            case "PRODUCT" -> {
+                Product product = productRepository.findById(request.getTargetId())
+                        .orElseThrow(
+                                () -> new BadRequestException("Product not found with id: " + request.getTargetId()));
+                builder.product(product);
+            }
+            case "LINK" -> builder.linkUrl(request.getLinkUrl());
+            default -> throw new BadRequestException("Invalid slider type: " + request.getType());
+        }
+
+        Slider slider = sliderRepository.save(builder.build());
+        return mapToResponse(slider);
     }
 
     public SliderResponse updateSlider(Long id, String username, SliderRequest request) {
@@ -64,36 +84,57 @@ public class SliderService {
             slider.setStartDate(request.getStartDate());
         if (request.getEndDate() != null)
             slider.setEndDate(request.getEndDate());
-
         if (request.getActive() != null)
             slider.setActive(request.getActive());
-
-        if (request.getType() != null || request.getTargetId() != null || request.getLinkUrl() != null) {
-            String targetUrl = resolveTargetUrl(request);
-            slider.setTargetUrl(targetUrl);
-        }
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
             String imageUrl = saveImage(request.getImage());
             slider.setImageUrl(imageUrl);
         }
 
+        if (request.getType() != null) {
+            switch (request.getType().toUpperCase()) {
+                case "STORE" -> {
+                    Store store = storeRepository.findById(request.getTargetId())
+                            .orElseThrow(() -> new BadRequestException("Store not found"));
+                    slider.setStore(store);
+                    slider.setProduct(null);
+                    slider.setLinkUrl(null);
+                }
+                case "PRODUCT" -> {
+                    Product product = productRepository.findById(request.getTargetId())
+                            .orElseThrow(() -> new BadRequestException("Product not found"));
+                    slider.setProduct(product);
+                    slider.setStore(null);
+                    slider.setLinkUrl(null);
+                }
+                case "LINK" -> {
+                    slider.setLinkUrl(request.getLinkUrl());
+                    slider.setProduct(null);
+                    slider.setStore(null);
+                }
+                default -> throw new BadRequestException("Invalid slider type: " + request.getType());
+            }
+        }
+
         Slider updated = sliderRepository.save(slider);
         return mapToResponse(updated);
     }
 
-    private String resolveTargetUrl(SliderRequest request) {
-        String type = request.getType();
-        if (type == null)
-            return null;
+    // private String resolveTargetUrl(SliderRequest request) {
+    // String type = request.getType();
+    // if (type == null)
+    // return null;
 
-        return switch (type.toUpperCase()) {
-            case "STORE" -> request.getTargetId() != null ? "/stores/" + request.getTargetId() : null;
-            case "PRODUCT" -> request.getTargetId() != null ? "/products/" + request.getTargetId() : null;
-            case "LINK", "NONE" -> request.getLinkUrl();
-            default -> null;
-        };
-    }
+    // return switch (type.toUpperCase()) {
+    // case "STORE" -> request.getTargetId() != null ? "/stores/" +
+    // request.getTargetId() : null;
+    // case "PRODUCT" -> request.getTargetId() != null ? "/products/" +
+    // request.getTargetId() : null;
+    // case "LINK", "NONE" -> request.getLinkUrl();
+    // default -> null;
+    // };
+    // }
 
     private String saveImage(MultipartFile image) {
         if (image == null || image.isEmpty())
@@ -102,14 +143,18 @@ public class SliderService {
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
             Path uploadPath = Paths.get("uploads/slider/");
+
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/slider/")
+                    .path(fileName)
+                    .toUriString();
 
-            return "/uploads/slider/" + fileName;
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image", e);
         }
@@ -121,12 +166,19 @@ public class SliderService {
         return mapToResponse(slider);
     }
 
-    public PaginatedResponse<SliderResponse> getAllSlidersPaginated(int page, int perPage, String sort,
+    public PaginatedResponse<SliderResponse> getAllSlidersPaginated(int page, int perPage, String q, String sort,
             String sortDir) {
         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Page<Slider> slidersPage = sliderRepository.findAll(pageable);
+        Page<Slider> slidersPage;
+
+        if (q != null && !q.trim().isEmpty()) {
+            slidersPage = sliderRepository.findByTitleContainingIgnoreCase(q, pageable);
+        } else {
+            slidersPage = sliderRepository.findAll(pageable);
+        }
+
         List<SliderResponse> data = slidersPage.map(this::mapToResponse).getContent();
 
         return new PaginatedResponse<>(data, slidersPage.getTotalElements(), page, perPage);
@@ -153,17 +205,30 @@ public class SliderService {
     }
 
     private SliderResponse mapToResponse(Slider slider) {
+        Long targetId = null;
+        String linkUrl = null;
+
+        if (slider.getProduct() != null) {
+            targetId = slider.getProduct().getId();
+        } else if (slider.getStore() != null) {
+            targetId = slider.getStore().getId();
+        } else if (slider.getLinkUrl() != null) {
+            linkUrl = slider.getLinkUrl();
+        }
+
         return SliderResponse.builder()
                 .id(slider.getId())
                 .title(slider.getTitle())
                 .description(slider.getDescription())
                 .imageUrl(slider.getImageUrl())
-                .targetUrl(slider.getTargetUrl())
                 .type(slider.getType())
                 .active(slider.isActive())
                 .priority(slider.getPriority())
                 .startDate(slider.getStartDate())
                 .endDate(slider.getEndDate())
+                .targetId(targetId)
+                .linkUrl(linkUrl)
                 .build();
     }
+
 }

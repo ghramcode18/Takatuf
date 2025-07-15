@@ -3,6 +3,7 @@ package geekcode.takatuf.Controller;
 import geekcode.takatuf.Service.ProductService;
 import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.product.ProductResponse;
+import geekcode.takatuf.dto.product.ProductSearchRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -134,4 +135,11 @@ public class ProductController {
 
         return ResponseEntity.ok(productService.getProductsByCategoryId(categoryId));
     }
+
+    @PostMapping("/search")
+    public ResponseEntity<List<ProductResponse>> searchProducts(@RequestBody ProductSearchRequest request) {
+        List<ProductResponse> results = productService.searchProducts(request.getSearch());
+        return ResponseEntity.ok(results);
+    }
+
 }

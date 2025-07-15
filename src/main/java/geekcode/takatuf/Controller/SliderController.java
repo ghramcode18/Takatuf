@@ -42,11 +42,13 @@ public class SliderController {
     @GetMapping("/paginated")
     public ResponseEntity<PaginatedResponse<SliderResponse>> getPaginatedSliders(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int perPage,
-            @RequestParam(defaultValue = "priority") String sort,
-            @RequestParam(defaultValue = "ASC") String sortDir) {
+            @RequestParam(defaultValue = "10", name = "per_page") int perPage,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "ASC", name = "sort_dir") String sortDir) {
 
-        PaginatedResponse<SliderResponse> response = sliderService.getAllSlidersPaginated(page, perPage, sort, sortDir);
+        PaginatedResponse<SliderResponse> response = sliderService.getAllSlidersPaginated(page, perPage, q, sort,
+                sortDir);
         return ResponseEntity.ok(response);
     }
 

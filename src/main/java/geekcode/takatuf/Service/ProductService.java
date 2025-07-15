@@ -170,6 +170,18 @@ public class ProductService {
         }
     }
 
+    public List<ProductResponse> searchProducts(String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return List.of();
+        }
+
+        List<Product> products = productRepository.findByNameContainingIgnoreCase(search.trim());
+
+        return products.stream()
+                .map(this::buildProductResponse)
+                .toList();
+    }
+
     private ProductResponse buildProductResponse(Product product) {
         Store store = product.getStore();
         User owner = store.getOwner();

@@ -10,4 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SliderRepository extends JpaRepository<Slider, Long> {
 
     Page<Slider> findAll(Pageable pageable);
+
+    Page<Slider> findByTitleContainingIgnoreCase(String q, Pageable pageable);
+
 }

@@ -53,12 +53,17 @@ public class SectionController {
     @GetMapping("/paginated")
     public ResponseEntity<PaginatedResponse<SectionResponse>> getPaginatedSections(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int perPage,
-             @RequestParam(defaultValue = "sortOrder") String sort,
-            @RequestParam(defaultValue = "ASC") String sortDir) {
+            @RequestParam(name = "per_page", defaultValue = "10") int perPage,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "ASC") String sortDir,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        PaginatedResponse<SectionResponse> response = sectionService.getAllSectionsPaginated(page, perPage, sort,
-                sortDir);
+        if (userDetails == null)
+            return ResponseEntity.status(401).build();
+
+        PaginatedResponse<SectionResponse> response = sectionService.getAllSectionsPaginated(
+                page, perPage, q, sort, sortDir);
         return ResponseEntity.ok(response);
     }
 
