@@ -121,28 +121,13 @@ public class SliderService {
         return mapToResponse(updated);
     }
 
-    // private String resolveTargetUrl(SliderRequest request) {
-    // String type = request.getType();
-    // if (type == null)
-    // return null;
-
-    // return switch (type.toUpperCase()) {
-    // case "STORE" -> request.getTargetId() != null ? "/stores/" +
-    // request.getTargetId() : null;
-    // case "PRODUCT" -> request.getTargetId() != null ? "/products/" +
-    // request.getTargetId() : null;
-    // case "LINK", "NONE" -> request.getLinkUrl();
-    // default -> null;
-    // };
-    // }
-
     private String saveImage(MultipartFile image) {
         if (image == null || image.isEmpty())
             return null;
 
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/slider/");
+            Path uploadPath = Paths.get("uploads/sliders/");
 
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);

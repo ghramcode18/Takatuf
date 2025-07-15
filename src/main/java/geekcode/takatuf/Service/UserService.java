@@ -27,19 +27,17 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-   public String storeProfileImage(MultipartFile imageFile) throws IOException {
-    String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
-    Path path = Paths.get("uploads/user/images/" + fileName);
-    Files.createDirectories(path.getParent());
-    Files.write(path, imageFile.getBytes());
+    public String storeProfileImage(MultipartFile imageFile) throws IOException {
+        String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+        Path path = Paths.get("uploads/users/images/" + fileName);
+        Files.createDirectories(path.getParent());
+        Files.write(path, imageFile.getBytes());
 
-
-    return ServletUriComponentsBuilder.fromCurrentContextPath()
-            .path("/uploads/user/images/")
-            .path(fileName)
-            .toUriString();
-}
-
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/uploads/user/images/")
+                .path(fileName)
+                .toUriString();
+    }
 
     public UserResponse updateUser(Long userId, UpdateUserRequest updateRequest) {
         User existingUser = userRepository.findById(userId)
@@ -102,7 +100,6 @@ public class UserService {
                 .orElseThrow(() -> new BadRequestException("User not found"))
                 .getId();
     }
-
 
     public User findUserId(Long id) {
         User user = userRepository.findById(id).get();

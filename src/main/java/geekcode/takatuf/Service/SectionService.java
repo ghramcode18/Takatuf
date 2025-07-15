@@ -5,8 +5,6 @@ import geekcode.takatuf.dto.section.SectionResponse;
 import geekcode.takatuf.dto.section.SectionSortRequest;
 import geekcode.takatuf.Entity.Section;
 import geekcode.takatuf.Entity.SectionItem;
-import geekcode.takatuf.Entity.Product;
-import geekcode.takatuf.Entity.Store;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Repository.ProductRepository;
@@ -204,4 +202,5 @@ public class SectionService {
                 .ids(ids)
                 .build();
     }
+    
 }
