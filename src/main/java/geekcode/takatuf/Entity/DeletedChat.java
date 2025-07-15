@@ -27,4 +27,8 @@ public class DeletedChat {
 
     @Column(name = "deleted_at", nullable = false)
     private LocalDateTime deletedAt;
+
+    @Column(name = "restored_at", nullable = true)
+    private LocalDateTime restoredAt;
+
 }
