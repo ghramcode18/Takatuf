@@ -43,6 +43,7 @@ public class ProductService {
         }
 
         Category category = categoryRepository.findById(categoryId)
+
                 .orElseThrow(() -> new BadRequestException("Category not found"));
 
         String imageUrl = saveImage(imageFile);
@@ -204,7 +205,8 @@ public class ProductService {
                 .groupDiscountPercentage(product.getGroupDiscountPercentage())
                 .image(product.getImage())
                 .quantity(product.getQuantity())
-                .category(product.getCategory() != null ? product.getCategory().getName() : null)
+                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
+                .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .storeId(store.getId())

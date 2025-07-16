@@ -27,7 +27,7 @@ public class ProductController {
             @RequestParam String description,
             @RequestParam BigDecimal price,
             @RequestParam BigDecimal groupDiscountPercentage,
-            @RequestParam Long category,
+            @RequestParam Long categoryId,
             @RequestParam Integer quantity,
             @RequestParam MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -41,7 +41,7 @@ public class ProductController {
                 description,
                 price,
                 groupDiscountPercentage,
-                category,
+                categoryId,
                 quantity,
                 image,
                 userDetails.getUsername());
@@ -56,7 +56,7 @@ public class ProductController {
             @RequestParam String description,
             @RequestParam(required = false) BigDecimal price,
             @RequestParam(required = false) BigDecimal groupDiscountPercentage,
-            @RequestParam(required = false) Long category,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Integer quantity,
             @RequestParam(required = false) MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -70,7 +70,7 @@ public class ProductController {
                 description,
                 price,
                 groupDiscountPercentage,
-                category,
+                categoryId,
                 quantity,
                 image,
                 userDetails.getUsername());
