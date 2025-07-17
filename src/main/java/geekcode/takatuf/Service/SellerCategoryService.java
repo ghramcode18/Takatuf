@@ -9,6 +9,8 @@ import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
+
 import geekcode.takatuf.Enums.*;
 import org.springframework.stereotype.Service;
 
@@ -23,71 +25,52 @@ public class SellerCategoryService {
     private final CategoryRepository categoryRepository;
     private final SellerCategoryRepository sellerCategoryRepository;
 
-    public void addCategoryToSeller(Long sellerId, Long categoryId) {
-
+    @Transactional
+    public void updateSellerCategories(Long sellerId, List<Long> categoryIds) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Seller not found"));
 
         if (seller.getType() != UserType.SELLER && seller.getType() != UserType.ADMIN) {
-            throw new BadRequestException("Only sellers and admins can add categories");
+            throw new BadRequestException("Only sellers and admins can update categories");
+        }
+        List<Category> validCategories = categoryRepository.findAllById(categoryIds);
+        if (validCategories.size() != categoryIds.size()) {
+            List<Long> foundIds = validCategories.stream().map(Category::getId).toList();
+            List<Long> missingIds = categoryIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .toList();
+            throw new ResourceNotFoundException("Categories not found: " + missingIds);
         }
 
-        if (sellerCategoryRepository.existsBySellerIdAndCategoryId(sellerId, categoryId)) {
-            throw new BadRequestException("Category already assigned to seller.");
-        }
+        sellerCategoryRepository.deleteBySellerId(sellerId);
 
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
-
-        SellerCategory sc = SellerCategory.builder()
+        List<SellerCategory> toSave = validCategories.stream().map(category -> SellerCategory.builder()
                 .seller(seller)
                 .category(category)
                 .createdAt(LocalDateTime.now())
-                .build();
+                .build()).toList();
 
-        sellerCategoryRepository.save(sc);
+        sellerCategoryRepository.saveAll(toSave);
     }
 
-    public void removeCategoryFromSeller(Long sellerId, Long categoryId) {
-        SellerCategory sc = sellerCategoryRepository.findBySeller_Id(sellerId).stream()
-                .filter(item -> item.getCategory().getId().equals(categoryId))
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Category not assigned to seller"));
-
-        sellerCategoryRepository.delete(sc);
+    public List<CategoryDto.CategoryResponse> getSellerCategories(Long sellerId) {
+        return sellerCategoryRepository.findBySeller_Id(sellerId).stream()
+                .map(sc -> {
+                    Category category = sc.getCategory();
+                    return new CategoryDto.CategoryResponse(
+                            category.getId(),
+                            category.getName(),
+                            category.getDescription(),
+                            category.getImage(),
+                            category.getActive());
+                })
+                .toList();
     }
-
-  public List<CategoryDto.CategoryResponse> getSellerCategories(Long sellerId) {
-    return sellerCategoryRepository.findBySeller_Id(sellerId).stream()
-            .map(sc -> {
-                Category category = sc.getCategory();
-                return new CategoryDto.CategoryResponse(
-                    category.getId(),
-                    category.getName(),
-                    category.getDescription(),
-                    category.getImage(), 
-                    category.getActive()
-                );
-            })
-            .toList();
-}
 
     public Long getUserIdByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email))
                 .getId();
-    }
-
-    public void addMultipleCategoriesToSeller(Long sellerId, List<Long> categoryIds) {
-        for (Long categoryId : categoryIds) {
-            addCategoryToSeller(sellerId, categoryId);
-        }
-    }
-
-    public void removeMultipleCategoriesFromSeller(Long sellerId, List<Long> categoryIds) {
-        for (Long categoryId : categoryIds) {
-            removeCategoryFromSeller(sellerId, categoryId);
-        }
     }
 
 }

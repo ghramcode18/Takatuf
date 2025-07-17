@@ -8,4 +8,6 @@ public interface SellerCategoryRepository extends JpaRepository<SellerCategory, 
     List<SellerCategory> findBySeller_Id(Long sellerId);
 
     boolean existsBySellerIdAndCategoryId(Long sellerId, Long categoryId);
+
+    void deleteBySellerId(Long sellerId);
 }
