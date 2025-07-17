@@ -7,11 +7,15 @@ import geekcode.takatuf.Entity.Section;
 import geekcode.takatuf.Entity.SectionItem;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
+import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.SectionRepository;
+import geekcode.takatuf.Repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import geekcode.takatuf.dto.PaginatedResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,14 +23,16 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.io.IOException;
 import java.util.UUID;
-
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class SectionService {
 
     private final SectionRepository sectionRepository;
+    private final ProductRepository productRepository;
+    private final StoreRepository storeRepository;
 
     public SectionResponse createSection(String username, SectionRequest request) {
         String imageUrl = saveImage(request.getImage());
@@ -41,12 +47,20 @@ public class SectionService {
                 .build();
 
         if (request.getIds() != null && !request.getIds().isEmpty()) {
-            List<SectionItem> items = request.getIds().stream()
-                    .map(id -> SectionItem.builder()
-                            .targetId(id)
-                            .section(section)
-                            .build())
-                    .toList();
+            List<SectionItem> items = request.getIds().stream().map(itemId -> {
+                SectionItem.SectionItemBuilder itemBuilder = SectionItem.builder().section(section);
+                switch (request.getType().toUpperCase()) {
+                    case "PRODUCT" -> itemBuilder.product(
+                            productRepository.findById(itemId)
+                                    .orElseThrow(() -> new BadRequestException("Product not found: " + itemId)));
+                    case "STORE" -> itemBuilder.store(
+                            storeRepository.findById(itemId)
+                                    .orElseThrow(() -> new BadRequestException("Store not found: " + itemId)));
+                    default -> throw new BadRequestException("Invalid type for section: " + request.getType());
+                }
+                return itemBuilder.build();
+            }).toList();
+
             section.setItems(items);
         }
 
@@ -75,12 +89,21 @@ public class SectionService {
 
         if (request.getIds() != null) {
             section.getItems().clear();
-            List<SectionItem> updatedItems = request.getIds().stream()
-                    .map(idVal -> SectionItem.builder()
-                            .targetId(idVal)
-                            .section(section)
-                            .build())
-                    .toList();
+
+            List<SectionItem> updatedItems = request.getIds().stream().map(itemId -> {
+                SectionItem.SectionItemBuilder itemBuilder = SectionItem.builder().section(section);
+                switch (request.getType().toUpperCase()) {
+                    case "PRODUCT" -> itemBuilder.product(
+                            productRepository.findById(itemId)
+                                    .orElseThrow(() -> new BadRequestException("Product not found: " + itemId)));
+                    case "STORE" -> itemBuilder.store(
+                            storeRepository.findById(itemId)
+                                    .orElseThrow(() -> new BadRequestException("Store not found: " + itemId)));
+                    default -> throw new BadRequestException("Invalid section type: " + request.getType());
+                }
+                return itemBuilder.build();
+            }).toList();
+
             section.getItems().addAll(updatedItems);
         }
 
@@ -89,9 +112,6 @@ public class SectionService {
     }
 
     private String saveImage(MultipartFile image) {
-        if (image == null || image.isEmpty())
-            return null;
-
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
             Path uploadPath = Paths.get("uploads/sections/");
@@ -103,9 +123,13 @@ public class SectionService {
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            return "/uploads/sections/" + fileName;
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/sections/")
+                    .path(fileName)
+                    .toUriString();
+
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save image", e);
+            throw new RuntimeException("Failed to save section image", e);
         }
     }
 
@@ -115,14 +139,19 @@ public class SectionService {
         return mapToResponse(section);
     }
 
-    public PaginatedResponse<SectionResponse> getAllSectionsPaginated(int page, int perPage, String sort,
+    public PaginatedResponse<SectionResponse> getAllSectionsPaginated(int page, int perPage, String q, String sort,
             String sortDir) {
         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Page<Section> pageResult = sectionRepository.findAll(pageable);
-        List<SectionResponse> data = pageResult.map(this::mapToResponse).getContent();
+        Page<Section> pageResult;
+        if (q != null && !q.trim().isEmpty()) {
+            pageResult = sectionRepository.findByNameContainingIgnoreCase(q, pageable);
+        } else {
+            pageResult = sectionRepository.findAll(pageable);
+        }
 
+        List<SectionResponse> data = pageResult.map(this::mapToResponse).getContent();
         return new PaginatedResponse<>(data, pageResult.getTotalElements(), page, perPage);
     }
 
@@ -148,7 +177,16 @@ public class SectionService {
 
     private SectionResponse mapToResponse(Section section) {
         List<Long> ids = section.getItems() != null
-                ? section.getItems().stream().map(SectionItem::getTargetId).toList()
+                ? section.getItems().stream()
+                        .map(item -> {
+                            if (item.getProduct() != null)
+                                return item.getProduct().getId();
+                            if (item.getStore() != null)
+                                return item.getStore().getId();
+                            return null;
+                        })
+                        .filter(idVal -> idVal != null)
+                        .collect(Collectors.toList())
                 : List.of();
 
         return SectionResponse.builder()
@@ -164,5 +202,5 @@ public class SectionService {
                 .ids(ids)
                 .build();
     }
-
+    
 }

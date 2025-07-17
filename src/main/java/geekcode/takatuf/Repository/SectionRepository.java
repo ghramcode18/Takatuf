@@ -11,4 +11,7 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
     List<Section> findAllByActiveTrueOrderBySortOrderAsc();
 
     Page<Section> findAll(Pageable pageable);
+
+    Page<Section> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
 }

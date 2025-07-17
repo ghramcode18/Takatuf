@@ -1,6 +1,7 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.dto.MessageResponse;
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
 import geekcode.takatuf.Service.StoreService;
@@ -102,17 +103,33 @@ public class StoreController {
         return ResponseEntity.ok(stores);
     }
 
-  @GetMapping("/mystores")
-public ResponseEntity<List<StoreResponse>> getStoresByOwner(
-        @AuthenticationPrincipal UserDetails userDetails) {
+    @GetMapping("/mystores")
+    public ResponseEntity<List<StoreResponse>> getStoresByOwner(
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-    if (userDetails == null) {
-        return ResponseEntity.status(401).build();
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        List<StoreResponse> stores = storeService.getStoresByOwner(userDetails.getUsername());
+        return ResponseEntity.ok(stores);
     }
 
-    List<StoreResponse> stores = storeService.getStoresByOwner(userDetails.getUsername());
-    return ResponseEntity.ok(stores);
-}
+    @GetMapping("/mystores/pag")
+    public ResponseEntity<PaginatedResponse<StoreResponse>> getStoresByOwner(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(name = "per_page", defaultValue = "10") int perPage,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "ASC") String sortDir) {
 
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        PaginatedResponse<StoreResponse> stores = storeService.getStoresByOwnerPaginated(userDetails.getUsername(),
+                page, perPage, sort, sortDir);
+        return ResponseEntity.ok(stores);
+    }
 
 }

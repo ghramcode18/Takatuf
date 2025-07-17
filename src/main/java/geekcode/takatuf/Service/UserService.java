@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.util.UUID;
 import java.nio.file.Path;
 import java.io.IOException;
@@ -27,10 +29,14 @@ public class UserService {
 
     public String storeProfileImage(MultipartFile imageFile) throws IOException {
         String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
-        Path path = Paths.get("uploads/user/images/" + fileName);
+        Path path = Paths.get("uploads/users/images/" + fileName);
         Files.createDirectories(path.getParent());
         Files.write(path, imageFile.getBytes());
-        return "/uploads/user/images/" + fileName;
+
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/uploads/user/images/")
+                .path(fileName)
+                .toUriString();
     }
 
     public UserResponse updateUser(Long userId, UpdateUserRequest updateRequest) {
@@ -94,7 +100,6 @@ public class UserService {
                 .orElseThrow(() -> new BadRequestException("User not found"))
                 .getId();
     }
-
 
     public User findUserId(Long id) {
         User user = userRepository.findById(id).get();

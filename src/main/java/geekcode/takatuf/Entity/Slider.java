@@ -30,4 +30,16 @@ public class Slider {
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;
+
+
+    @ManyToOne
+@JoinColumn(name = "product_id")
+private Product product;
+
+@ManyToOne
+@JoinColumn(name = "store_id")
+private Store store;
+
+private String linkUrl; 
+
 }

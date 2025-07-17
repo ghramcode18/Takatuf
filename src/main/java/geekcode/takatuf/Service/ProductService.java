@@ -43,6 +43,7 @@ public class ProductService {
         }
 
         Category category = categoryRepository.findById(categoryId)
+
                 .orElseThrow(() -> new BadRequestException("Category not found"));
 
         String imageUrl = saveImage(imageFile);
@@ -170,6 +171,18 @@ public class ProductService {
         }
     }
 
+    public List<ProductResponse> searchProducts(String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return List.of();
+        }
+
+        List<Product> products = productRepository.findByNameContainingIgnoreCase(search.trim());
+
+        return products.stream()
+                .map(this::buildProductResponse)
+                .toList();
+    }
+
     private ProductResponse buildProductResponse(Product product) {
         Store store = product.getStore();
         User owner = store.getOwner();
@@ -192,7 +205,8 @@ public class ProductService {
                 .groupDiscountPercentage(product.getGroupDiscountPercentage())
                 .image(product.getImage())
                 .quantity(product.getQuantity())
-                .category(product.getCategory() != null ? product.getCategory().getName() : null)
+                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
+                .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .storeId(store.getId())
