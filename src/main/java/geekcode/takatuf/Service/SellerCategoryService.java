@@ -1,6 +1,7 @@
 package geekcode.takatuf.Service;
 
 import geekcode.takatuf.dto.*;
+import geekcode.takatuf.dto.category.CategoryDto;
 import geekcode.takatuf.Entity.*;
 import org.springframework.data.domain.*;
 import geekcode.takatuf.Exception.Types.BadRequestException;
@@ -56,16 +57,37 @@ public class SellerCategoryService {
         sellerCategoryRepository.delete(sc);
     }
 
-    public List<Category> getSellerCategories(Long sellerId) {
-        return sellerCategoryRepository.findBySeller_Id(sellerId).stream()
-                .map(SellerCategory::getCategory)
-                .toList();
-    }
+  public List<CategoryDto.CategoryResponse> getSellerCategories(Long sellerId) {
+    return sellerCategoryRepository.findBySeller_Id(sellerId).stream()
+            .map(sc -> {
+                Category category = sc.getCategory();
+                return new CategoryDto.CategoryResponse(
+                    category.getId(),
+                    category.getName(),
+                    category.getDescription(),
+                    category.getImage(), 
+                    category.getActive()
+                );
+            })
+            .toList();
+}
 
     public Long getUserIdByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email))
                 .getId();
+    }
+
+    public void addMultipleCategoriesToSeller(Long sellerId, List<Long> categoryIds) {
+        for (Long categoryId : categoryIds) {
+            addCategoryToSeller(sellerId, categoryId);
+        }
+    }
+
+    public void removeMultipleCategoriesFromSeller(Long sellerId, List<Long> categoryIds) {
+        for (Long categoryId : categoryIds) {
+            removeCategoryFromSeller(sellerId, categoryId);
+        }
     }
 
 }

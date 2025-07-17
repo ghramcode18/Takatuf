@@ -2,6 +2,7 @@ package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Service.SellerCategoryService;
 import geekcode.takatuf.Entity.Category;
+import geekcode.takatuf.dto.category.CategoryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,40 +19,41 @@ public class SellerCategoryController {
     private final SellerCategoryService sellerCategoryService;
 
     @PostMapping("/add")
-    public ResponseEntity<Void> addCategory(
-            @RequestParam Long categoryId,
+    public ResponseEntity<Void> addMultipleCategories(
+            @RequestBody List<Long> categoryIds,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
 
-        sellerCategoryService.addCategoryToSeller(getCurrentUserId(userDetails), categoryId);
+        sellerCategoryService.addMultipleCategoriesToSeller(getCurrentUserId(userDetails), categoryIds);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/remove")
-    public ResponseEntity<Void> removeCategory(
-            @RequestParam Long categoryId,
+    public ResponseEntity<Void> removeMultipleCategories(
+            @RequestBody List<Long> categoryIds,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
 
-        sellerCategoryService.removeCategoryFromSeller(getCurrentUserId(userDetails), categoryId);
+        sellerCategoryService.removeMultipleCategoriesFromSeller(getCurrentUserId(userDetails), categoryIds);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<Category>> getMyCategories(
+    public ResponseEntity<List<CategoryDto.CategoryResponse>> getMyCategories(
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
 
-        List<Category> categories = sellerCategoryService.getSellerCategories(getCurrentUserId(userDetails));
+        List<CategoryDto.CategoryResponse> categories = sellerCategoryService
+                .getSellerCategories(getCurrentUserId(userDetails));
         return ResponseEntity.ok(categories);
     }
 
