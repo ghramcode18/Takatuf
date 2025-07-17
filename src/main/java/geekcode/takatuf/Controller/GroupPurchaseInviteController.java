@@ -9,6 +9,8 @@ import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.GroupPurchaseService;
 import geekcode.takatuf.dto.GroupPurchaseInviteResponse;
 import geekcode.takatuf.dto.MessageResponse;
+import geekcode.takatuf.dto.group_purchase.GroupPurchaseInviteDetailsResponse;
+import geekcode.takatuf.dto.group_purchase.SendInviteRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,17 +31,21 @@ public class GroupPurchaseInviteController {
 
 
     @PostMapping("/invite")
-    public ResponseEntity<GroupPurchaseInvite> sendInvite(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long receiverId,
-            @RequestParam(required = false) String message
-    ) {
-        User sender = userRepository.findByEmail(userDetails.getUsername())
+    public ResponseEntity<GroupPurchaseInvite> sendInvite(@AuthenticationPrincipal UserDetails userDetails,@RequestBody SendInviteRequest request) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        GroupPurchaseInvite invite = groupPurchaseService.sendInvite(sender.getId(), receiverId, message);
+        GroupPurchaseInvite invite = groupPurchaseService.sendInvite(request);
         return ResponseEntity.ok(invite);
     }
+
+    @GetMapping("/invitations/{inviteId}")
+    public ResponseEntity<GroupPurchaseInviteDetailsResponse> getInviteDetails(@AuthenticationPrincipal UserDetails userDetails,@PathVariable Long inviteId) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        GroupPurchaseInviteDetailsResponse details = groupPurchaseService.getInviteDetails(inviteId);
+        return ResponseEntity.ok(details);
+    }
+
 
     @PostMapping("/invitations/{invitationId}/accept")
     public ResponseEntity<MessageResponse> acceptInvitation(

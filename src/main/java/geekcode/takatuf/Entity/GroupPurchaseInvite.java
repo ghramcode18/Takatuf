@@ -43,4 +43,7 @@ public class GroupPurchaseInvite {
     @Column(name = "responded_at")
     private LocalDateTime respondedAt;
 
+    @Column(name = "product_id")
+    private Long productId;
+
 }

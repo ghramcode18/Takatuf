@@ -30,4 +30,6 @@ public class PendingOrderItem {
     private BigDecimal price;
 
     private LocalDateTime addedAt;
+
+    private String image;
 }

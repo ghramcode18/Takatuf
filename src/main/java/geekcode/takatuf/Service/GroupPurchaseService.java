@@ -2,10 +2,13 @@ package geekcode.takatuf.Service;
 
 import geekcode.takatuf.Entity.GroupPurchaseInvite;
 import geekcode.takatuf.Entity.GroupPurchaseOrder;
+import geekcode.takatuf.Entity.Product;
 import geekcode.takatuf.Enums.GroupPurchaseStatus;
 import geekcode.takatuf.Enums.InviteStatus;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.*;
+import geekcode.takatuf.dto.group_purchase.GroupPurchaseInviteDetailsResponse;
+import geekcode.takatuf.dto.group_purchase.SendInviteRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
@@ -27,19 +30,21 @@ public class GroupPurchaseService {
     private final GroupPurchaseInviteRepository groupPurchaseInviteRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
+    private final ProductRepository productRepository;
     private final  GroupPurchaseOrderRepository groupPurchaseOrderRepository;
 
-    public GroupPurchaseInvite sendInvite(Long senderId, Long receiverId, String message) {
-        User sender = userRepository.findById(senderId)
+    public GroupPurchaseInvite sendInvite(SendInviteRequest request) {
+        User sender = userRepository.findById(request.getSenderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
 
-        User receiver = userRepository.findById(receiverId)
+        User receiver = userRepository.findById(request.getReceiverId())
                 .orElseThrow(() -> new ResourceNotFoundException("Receiver not found"));
 
         GroupPurchaseInvite invite = GroupPurchaseInvite.builder()
                 .sender(sender)
                 .receiver(receiver)
-                .message(message)
+                .message(request.getMessage())
+                .productId(request.getProductId()) // 👈 جديد
                 .status(InviteStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusHours(24))
@@ -47,7 +52,7 @@ public class GroupPurchaseService {
 
         GroupPurchaseInvite saved = groupPurchaseInviteRepository.save(invite);
 
-
+        // إشعار للمستلم
         messagingTemplate.convertAndSendToUser(
                 String.valueOf(receiver.getId()),
                 "/queue/notifications",
@@ -56,8 +61,34 @@ public class GroupPurchaseService {
 
         return saved;
     }
+    public GroupPurchaseInviteDetailsResponse getInviteDetails(Long inviteId) {
+        GroupPurchaseInvite invite = inviteRepository.findById(inviteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invite not found"));
 
-        private final GroupPurchaseInviteRepository inviteRepository;
+        Product product = productRepository.findById(invite.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        User sender = invite.getSender();
+
+        double oldPrice = product.getPrice().doubleValue();
+        double discount = product.getGroupDiscountPercentage().doubleValue();
+        double newPrice = oldPrice - (oldPrice * discount / 100);
+
+        return new GroupPurchaseInviteDetailsResponse(
+                invite.getId(),
+                product.getId(),
+                product.getName(),
+                product.getImage(),
+                oldPrice,
+                newPrice,
+                sender.getName(),
+                sender.getProfileImageUrl()
+        );
+    }
+
+
+
+    private final GroupPurchaseInviteRepository inviteRepository;
 
         @Scheduled(cron = "0 0 * * * *") // check every hour
         public void expireOldInvites() {

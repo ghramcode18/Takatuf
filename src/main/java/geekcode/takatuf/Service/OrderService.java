@@ -367,7 +367,8 @@ public class OrderService {
                                         product.getId(),
                                         product.getName(),
                                         currentPrice,
-                                        item.getQuantity()));
+                                        item.getQuantity(),
+                                        item.getImage()));
                 }
 
                 order.setTotalPrice(total);
