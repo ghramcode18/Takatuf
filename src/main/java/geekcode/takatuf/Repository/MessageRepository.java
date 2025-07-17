@@ -28,4 +28,5 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     Optional<Message> findTopByChatOrderByTimestampDesc(Chat chat);
 
+    List<Message> findByChatIdAndTimestampBetweenAndDeletedFalse(Long chatId, LocalDateTime start, LocalDateTime end);
 }

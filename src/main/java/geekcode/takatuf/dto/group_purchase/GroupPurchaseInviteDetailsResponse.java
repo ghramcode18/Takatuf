@@ -16,4 +16,7 @@ public class GroupPurchaseInviteDetailsResponse {
 
     private String senderName;
     private String senderPhoto;
+
+    private String receiverName;
+    private String receiverPhoto;
 }

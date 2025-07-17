@@ -69,6 +69,7 @@ public class GroupPurchaseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         User sender = invite.getSender();
+        User receiver = invite.getReceiver();
 
         double oldPrice = product.getPrice().doubleValue();
         double discount = product.getGroupDiscountPercentage().doubleValue();
@@ -82,7 +83,9 @@ public class GroupPurchaseService {
                 oldPrice,
                 newPrice,
                 sender.getName(),
-                sender.getProfileImageUrl()
+                sender.getProfileImageUrl(),
+                receiver.getName(),
+                receiver.getProfileImageUrl()
         );
     }
 
