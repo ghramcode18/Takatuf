@@ -18,8 +18,8 @@ public class SellerCategoryController {
 
     private final SellerCategoryService sellerCategoryService;
 
-    @PostMapping("/add")
-    public ResponseEntity<Void> addMultipleCategories(
+    @PostMapping("/update")
+    public ResponseEntity<Void> updateSellerCategories(
             @RequestBody List<Long> categoryIds,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -27,20 +27,7 @@ public class SellerCategoryController {
             return ResponseEntity.status(401).build();
         }
 
-        sellerCategoryService.addMultipleCategoriesToSeller(getCurrentUserId(userDetails), categoryIds);
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/remove")
-    public ResponseEntity<Void> removeMultipleCategories(
-            @RequestBody List<Long> categoryIds,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        sellerCategoryService.removeMultipleCategoriesFromSeller(getCurrentUserId(userDetails), categoryIds);
+        sellerCategoryService.updateSellerCategories(getCurrentUserId(userDetails), categoryIds);
         return ResponseEntity.ok().build();
     }
 
