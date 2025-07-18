@@ -591,21 +591,32 @@ public class OrderService {
                                 .build();
         }
 
-
-        public List<Order> getMyOrder(Long userId){
-
+        public List<OrderResponse> getMyOrder(Long userId) {
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-               List<Order> myOrder =  orderRepository.findByUserId(userId);
-                return myOrder;
+                List<Order> myOrders = orderRepository.findByUserId(userId);
+
+                return myOrders.stream()
+                        .map(order -> {
+                                List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
+                                return mapToOrderResponse(order, items);
+                        })
+                        .toList();
         }
 
-        public List<Order> getOrderbyId(Long userId,Long orderId){
+        public List<OrderResponse> getOrderById(Long userId, Long orderId) {
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-                List<Order> myOrder =  orderRepository.findByUserIdAndId(userId, orderId);
-                return myOrder;
+                List<Order> orders = orderRepository.findByUserIdAndId(userId, orderId);
+
+                return orders.stream()
+                        .map(order -> {
+                                List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
+                                return mapToOrderResponse(order, items);
+                        })
+                        .toList();
         }
+
 }
