@@ -5,14 +5,12 @@ import geekcode.takatuf.dto.section.SectionResponse;
 import geekcode.takatuf.dto.slider.SliderRequest;
 import geekcode.takatuf.dto.slider.SliderResponse;
 import geekcode.takatuf.dto.slider.SliderSortRequest;
-import geekcode.takatuf.Entity.Product;
-import geekcode.takatuf.Entity.Section;
-import geekcode.takatuf.Entity.Slider;
-import geekcode.takatuf.Entity.Store;
+import geekcode.takatuf.Entity.*;
 
 import org.springframework.data.domain.*;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
+import geekcode.takatuf.Repository.CategoryRepository;
 import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.SliderRepository;
 import geekcode.takatuf.Repository.StoreRepository;
@@ -33,6 +31,7 @@ public class SliderService {
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
     private final SliderRepository sliderRepository;
+    private final CategoryRepository categoryRepository;
 
     public SliderResponse createSlider(String username, SliderRequest request) {
         String imageUrl = saveImage(request.getImage());
@@ -99,6 +98,7 @@ public class SliderService {
                             .orElseThrow(() -> new BadRequestException("Store not found"));
                     slider.setStore(store);
                     slider.setProduct(null);
+                    slider.setCategory(null);
                     slider.setLinkUrl(null);
                 }
                 case "PRODUCT" -> {
@@ -106,12 +106,22 @@ public class SliderService {
                             .orElseThrow(() -> new BadRequestException("Product not found"));
                     slider.setProduct(product);
                     slider.setStore(null);
+                    slider.setCategory(null);
+                    slider.setLinkUrl(null);
+                }
+                case "CATEGORY" -> {
+                    Category category = categoryRepository.findById(request.getTargetId())
+                            .orElseThrow(() -> new BadRequestException("Category not found"));
+                    slider.setCategory(category);
+                    slider.setProduct(null);
+                    slider.setStore(null);
                     slider.setLinkUrl(null);
                 }
                 case "LINK" -> {
                     slider.setLinkUrl(request.getLinkUrl());
                     slider.setProduct(null);
                     slider.setStore(null);
+                    slider.setCategory(null);
                 }
                 default -> throw new BadRequestException("Invalid slider type: " + request.getType());
             }
@@ -136,7 +146,7 @@ public class SliderService {
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             return ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/slider/")
+                    .path("/uploads/sliders/")
                     .path(fileName)
                     .toUriString();
 
@@ -197,6 +207,8 @@ public class SliderService {
             targetId = slider.getProduct().getId();
         } else if (slider.getStore() != null) {
             targetId = slider.getStore().getId();
+        } else if (slider.getCategory() != null) {
+            targetId = slider.getCategory().getId();
         } else if (slider.getLinkUrl() != null) {
             linkUrl = slider.getLinkUrl();
         }

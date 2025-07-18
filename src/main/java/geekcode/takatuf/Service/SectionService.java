@@ -7,6 +7,7 @@ import geekcode.takatuf.Entity.Section;
 import geekcode.takatuf.Entity.SectionItem;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
+import geekcode.takatuf.Repository.CategoryRepository;
 import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.SectionRepository;
 import geekcode.takatuf.Repository.StoreRepository;
@@ -33,6 +34,7 @@ public class SectionService {
     private final SectionRepository sectionRepository;
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
+    private final CategoryRepository categoryRepository;
 
     public SectionResponse createSection(String username, SectionRequest request) {
         String imageUrl = saveImage(request.getImage());
@@ -56,8 +58,12 @@ public class SectionService {
                     case "STORE" -> itemBuilder.store(
                             storeRepository.findById(itemId)
                                     .orElseThrow(() -> new BadRequestException("Store not found: " + itemId)));
+                    case "CATEGORY" -> itemBuilder.category(
+                            categoryRepository.findById(itemId)
+                                    .orElseThrow(() -> new BadRequestException("Category not found: " + itemId)));
                     default -> throw new BadRequestException("Invalid type for section: " + request.getType());
                 }
+
                 return itemBuilder.build();
             }).toList();
 
@@ -99,8 +105,12 @@ public class SectionService {
                     case "STORE" -> itemBuilder.store(
                             storeRepository.findById(itemId)
                                     .orElseThrow(() -> new BadRequestException("Store not found: " + itemId)));
-                    default -> throw new BadRequestException("Invalid section type: " + request.getType());
+                    case "CATEGORY" -> itemBuilder.category(
+                            categoryRepository.findById(itemId)
+                                    .orElseThrow(() -> new BadRequestException("Category not found: " + itemId)));
+                    default -> throw new BadRequestException("Invalid type for section: " + request.getType());
                 }
+
                 return itemBuilder.build();
             }).toList();
 
@@ -183,6 +193,8 @@ public class SectionService {
                                 return item.getProduct().getId();
                             if (item.getStore() != null)
                                 return item.getStore().getId();
+                            if (item.getCategory() != null)
+                                return item.getCategory().getId();
                             return null;
                         })
                         .filter(idVal -> idVal != null)
@@ -202,5 +214,5 @@ public class SectionService {
                 .ids(ids)
                 .build();
     }
-    
+
 }
