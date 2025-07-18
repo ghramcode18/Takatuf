@@ -34,7 +34,9 @@ public class Product {
     private Category category;
 
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
+
     @Column(name = "group_discount_percentage")
     private BigDecimal groupDiscountPercentage;
 
