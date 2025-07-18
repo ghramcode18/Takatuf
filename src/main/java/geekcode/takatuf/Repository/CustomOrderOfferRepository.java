@@ -14,4 +14,7 @@ public interface CustomOrderOfferRepository extends JpaRepository<CustomOrderOff
     List<CustomOrderOffer> findBySellerId(Long sellerId);
 
     boolean existsByOrderIdAndSellerEmail(Long orderId, String sellerEmail);
+
+    boolean existsByOrderIdAndSellerId(Long orderId, Long sellerId);
+
 }

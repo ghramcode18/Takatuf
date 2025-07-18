@@ -88,6 +88,10 @@ public class User {
     @OneToMany(mappedBy = "user")
     @JsonIgnore
     private List<ProductReview> productReviews;
+    
+    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<SellerCategory> sellerCategories;
 
     // One-to-Many with SellerReviews
     @OneToMany(mappedBy = "reviewer")

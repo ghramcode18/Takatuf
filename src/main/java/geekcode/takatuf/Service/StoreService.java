@@ -1,19 +1,24 @@
 package geekcode.takatuf.Service;
 
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
 import geekcode.takatuf.Entity.Store;
 import geekcode.takatuf.Entity.StoreReview;
 import geekcode.takatuf.Entity.User;
+import org.springframework.data.domain.*;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
+import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Repository.StoreReviewRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -28,6 +33,7 @@ public class StoreService {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final StoreReviewRepository storeReviewRepository;
+    private final ProductRepository productRepository;
 
     public StoreResponse createStore(String username, StoreRequest request) {
         if (storeRepository.existsByName(request.getName())) {
@@ -95,15 +101,19 @@ public class StoreService {
 
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/stores");
+            Path uploadPath = Paths.get("/uploads/stores");
+
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/stores")
+                    .path(fileName)
+                    .toUriString();
 
-            return "/uploads/stores" + fileName;
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image", e);
         }
@@ -126,12 +136,31 @@ public class StoreService {
                 .toList();
     }
 
+    public PaginatedResponse<StoreResponse> getStoresByOwnerPaginated(
+            String username, int page, int perPage, String sort, String sortDir) {
+
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new BadRequestException("User not found."));
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
+
+        Page<Store> storesPage = storeRepository.findByOwner_Id(user.getId(), pageable);
+        List<StoreResponse> responses = storesPage.getContent().stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return new PaginatedResponse<>(responses, storesPage.getTotalElements(), page, perPage);
+    }
+
     private StoreResponse mapToResponse(Store store) {
         List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());
         double averageRating = reviews.stream()
                 .mapToInt(StoreReview::getRating)
                 .average()
                 .orElse(0.0);
+
+        long totalProducts = productRepository.countByStoreId(store.getId());
 
         return StoreResponse.builder()
                 .id(store.getId())
@@ -143,6 +172,7 @@ public class StoreService {
                 .ownerName(store.getOwner().getName())
                 .averageRating(averageRating)
                 .totalReviews(reviews.size())
+                .totalProducts(totalProducts)
                 .build();
     }
 

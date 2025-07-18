@@ -1,5 +1,6 @@
 package geekcode.takatuf.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -28,5 +29,7 @@ public class Category {
     private Boolean active;
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private List<Product> products;
-
+    @OneToMany(mappedBy = "category")
+    @JsonIgnore
+    private List<SellerCategory> sellerCategories;
 }

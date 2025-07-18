@@ -45,6 +45,7 @@ public class OrderService {
         private final CategoryRepository categoryRepository;
         private final OrderItemRepository orderItemRepository;
         private final UserRepository userRepository;
+        private final SellerCategoryRepository sellerCategoryRepository;
         private final PendingOrderItemRepository pendingOrderItemRepository;
         private final PendingOrderRepository pendingOrderRepository;
 
@@ -282,15 +283,20 @@ public class OrderService {
                 return orders.stream().map(this::mapToOrderResponse).toList();
         }
 
-        public List<OrderResponse> getCustomOrdersForSeller(Long sellerId) {
-                List<CustomOrderOffer> offers = customOrderOfferRepository.findBySellerId(sellerId);
-                List<Order> orders = offers.stream()
-                                .map(CustomOrderOffer::getOrder)
-                                .distinct()
-                                .filter(o -> o.getOrderType() == OrderType.CUSTOM)
+        public List<OrderResponse> getCustomOrdersForSellerByCategory(Long sellerId) {
+                List<Long> categoryIds = sellerCategoryRepository.findBySeller_Id(sellerId)
+                                .stream()
+                                .map(sc -> sc.getCategory().getId())
                                 .toList();
 
-                return orders.stream().map(this::mapToOrderResponse).toList();
+                List<Order> matchingOrders = orderRepository.findByOrderType(OrderType.CUSTOM).stream()
+                                .filter(order -> order.getCategory() != null
+                                                && categoryIds.contains(order.getCategory().getId())
+                                                && !customOrderOfferRepository.existsByOrderIdAndSellerId(order.getId(),
+                                                                sellerId))
+                                .toList();
+
+                return matchingOrders.stream().map(this::mapToOrderResponse).toList();
         }
 
         @Transactional
@@ -591,6 +597,7 @@ public class OrderService {
                                 .build();
         }
 
+
         public List<OrderResponse> getMyOrder(Long userId) {
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -620,3 +627,4 @@ public class OrderService {
         }
 
 }
+

@@ -153,7 +153,7 @@ public class OrderController {
     public ResponseEntity<List<OrderResponse>> getCustomOrdersForSeller(
             @AuthenticationPrincipal UserDetails userDetails) {
         Long sellerId = extractUserId(userDetails);
-        return ResponseEntity.ok(orderService.getCustomOrdersForSeller(sellerId));
+        return ResponseEntity.ok(orderService.getCustomOrdersForSellerByCategory(sellerId));
 
     }
 
@@ -165,7 +165,7 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getCustomOrderById(orderId, email));
     }
 
-     @GetMapping("/getMyOrder")
+      @GetMapping("/getMyOrder")
     public ResponseEntity<List<OrderResponse>> getMyOrder(
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
@@ -182,3 +182,4 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 }
+
