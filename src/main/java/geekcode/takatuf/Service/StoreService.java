@@ -101,16 +101,16 @@ public class StoreService {
 
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get("/uploads/stores");
-
+            Path uploadPath = Paths.get("uploads/stores/"); 
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
             return ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/stores")
+                    .path("/uploads/stores/")
                     .path(fileName)
                     .toUriString();
 

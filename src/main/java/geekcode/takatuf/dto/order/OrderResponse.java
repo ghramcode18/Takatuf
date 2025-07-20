@@ -42,7 +42,8 @@ public class OrderResponse {
     private BigDecimal proposedPrice;
     private String imageUrl;
     private String name;
-
+    private String buyerName;
+    private String buyerImageUrl;
     private Long categoryId;
     private String categoryName;
 

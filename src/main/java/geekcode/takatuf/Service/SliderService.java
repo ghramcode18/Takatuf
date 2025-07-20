@@ -28,6 +28,7 @@ import java.nio.file.*;
 @Service
 @RequiredArgsConstructor
 public class SliderService {
+
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
     private final SliderRepository sliderRepository;
@@ -49,15 +50,18 @@ public class SliderService {
         switch (request.getType().toUpperCase()) {
             case "STORE" -> {
                 Store store = storeRepository.findById(request.getTargetId())
-                        .orElseThrow(
-                                () -> new BadRequestException("Store not found with id: " + request.getTargetId()));
+                        .orElseThrow(() -> new BadRequestException("Store not found with id: " + request.getTargetId()));
                 builder.store(store);
             }
             case "PRODUCT" -> {
                 Product product = productRepository.findById(request.getTargetId())
-                        .orElseThrow(
-                                () -> new BadRequestException("Product not found with id: " + request.getTargetId()));
+                        .orElseThrow(() -> new BadRequestException("Product not found with id: " + request.getTargetId()));
                 builder.product(product);
+            }
+            case "CATEGORY" -> {
+                Category category = categoryRepository.findById(request.getTargetId())
+                        .orElseThrow(() -> new BadRequestException("Category not found with id: " + request.getTargetId()));
+                builder.category(category);
             }
             case "LINK" -> builder.linkUrl(request.getLinkUrl());
             default -> throw new BadRequestException("Invalid slider type: " + request.getType());
@@ -138,7 +142,6 @@ public class SliderService {
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
             Path uploadPath = Paths.get("uploads/sliders/");
-
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -162,7 +165,7 @@ public class SliderService {
     }
 
     public PaginatedResponse<SliderResponse> getAllSlidersPaginated(int page, int perPage, String q, String sort,
-            String sortDir) {
+                                                                     String sortDir) {
         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
@@ -175,7 +178,6 @@ public class SliderService {
         }
 
         List<SliderResponse> data = slidersPage.map(this::mapToResponse).getContent();
-
         return new PaginatedResponse<>(data, slidersPage.getTotalElements(), page, perPage);
     }
 
@@ -227,5 +229,4 @@ public class SliderService {
                 .linkUrl(linkUrl)
                 .build();
     }
-
 }

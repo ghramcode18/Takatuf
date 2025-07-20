@@ -138,7 +138,8 @@ public class ProductController {
 
     @PostMapping("/search")
     public ResponseEntity<List<ProductResponse>> searchProducts(@RequestBody ProductSearchRequest request) {
-        List<ProductResponse> results = productService.searchProducts(request.getSearch());
+        List<ProductResponse> results = productService.searchProducts(
+                request.getSearch(), request.getIds());
         return ResponseEntity.ok(results);
     }
 

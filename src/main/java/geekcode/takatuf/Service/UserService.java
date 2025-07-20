@@ -17,6 +17,7 @@ import java.io.IOException;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
@@ -29,12 +30,17 @@ public class UserService {
 
     public String storeProfileImage(MultipartFile imageFile) throws IOException {
         String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
-        Path path = Paths.get("uploads/users/images/" + fileName);
-        Files.createDirectories(path.getParent());
-        Files.write(path, imageFile.getBytes());
+        Path uploadPath = Paths.get("uploads/users/images/");
+
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        Path filePath = uploadPath.resolve(fileName);
+        Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         return ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/uploads/user/images/")
+                .path("/uploads/users/images/")
                 .path(fileName)
                 .toUriString();
     }
