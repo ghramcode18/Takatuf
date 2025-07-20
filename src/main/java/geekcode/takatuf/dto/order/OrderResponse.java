@@ -56,5 +56,6 @@ public class OrderResponse {
         private String productName;
         private Integer quantity;
         private BigDecimal price;
+        private String image;
     }
 }

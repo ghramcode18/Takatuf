@@ -125,7 +125,7 @@ public class MessageService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        List<Message> messages = messageRepository.findByChatIdAndTimestampBetweenAndDeletedFalseOrderByTimestampAsc(
+        List<Message> messages = messageRepository.findByChatIdAndTimestampBetweenAndDeletedFalse(
                 chatId, startDate, endDate
         );
 

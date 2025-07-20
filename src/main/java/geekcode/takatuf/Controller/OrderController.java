@@ -165,20 +165,21 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getCustomOrderById(orderId, email));
     }
 
-    @GetMapping("/getMyOrder")
-    public ResponseEntity<List<Order>> getMyOrder(
+      @GetMapping("/getMyOrder")
+    public ResponseEntity<List<OrderResponse>> getMyOrder(
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
-        List<Order> response = orderService.getMyOrder(userId);
+         List<OrderResponse> response= orderService.getMyOrder(userId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<List<Order>> getOrderbyId(
+    public ResponseEntity<List<OrderResponse>> getOrderbyId(
             @PathVariable Long orderId,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
-        List<Order> response = orderService.getOrderbyId(userId, orderId);
+        List<OrderResponse>response = orderService.getOrderById(userId,orderId);
         return ResponseEntity.ok(response);
     }
 }
+
