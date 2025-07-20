@@ -18,6 +18,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import geekcode.takatuf.dto.PaginatedResponse;
+import geekcode.takatuf.dto.category.CategoryDto.CategoryResponse;
+
+import java.util.Objects;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +39,8 @@ public class SectionService {
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductService productService;
+    private final StoreService storeService;
 
     public SectionResponse createSection(String username, SectionRequest request) {
         String imageUrl = saveImage(request.getImage());
@@ -167,7 +173,7 @@ public class SectionService {
 
     public List<SectionResponse> getAllSections() {
         List<Section> sections = sectionRepository.findAll();
-        return sections.stream().map(this::mapToResponse).toList();
+        return sections.stream().map(this::mapToResponseWithData).toList();
     }
 
     public void deleteSection(Long id, String username) {
@@ -215,4 +221,61 @@ public class SectionService {
                 .build();
     }
 
+    private SectionResponse mapToResponseWithData(Section section) {
+        List<Long> ids = section.getItems() != null
+                ? section.getItems().stream()
+                        .map(item -> {
+                            if (item.getProduct() != null)
+                                return item.getProduct().getId();
+                            if (item.getStore() != null)
+                                return item.getStore().getId();
+                            if (item.getCategory() != null)
+                                return item.getCategory().getId();
+                            return null;
+                        })
+                        .filter(Objects::nonNull)
+                        .toList()
+                : List.of();
+
+        List<?> data;
+        switch (section.getType().toUpperCase()) {
+            case "PRODUCT" -> {
+                var products = productRepository.findAllById(ids);
+                data = products.stream()
+                        .map(product -> productService.getProductById(product.getId()))
+                        .toList();
+            }
+            case "STORE" -> {
+                var stores = storeRepository.findAllById(ids);
+                data = stores.stream()
+                        .map(store -> storeService.getStoreById(store.getId()))
+                        .toList();
+            }
+            case "CATEGORY" -> {
+                var categories = categoryRepository.findAllById(ids);
+                data = categories.stream()
+                        .map(category -> CategoryResponse.builder()
+                                .id(category.getId())
+                                .name(category.getName())
+                                .image(category.getImage())
+                                .build())
+                        .toList();
+            }
+            default -> data = List.of();
+        }
+
+        return SectionResponse.builder()
+                .id(section.getId())
+                .name(section.getName())
+                .description(section.getDescription())
+                .type(section.getType())
+                .imageUrl(section.getImageUrl())
+                .sortOrder(section.getSortOrder())
+                .active(section.getActive())
+                .createdAt(section.getCreatedAt())
+                .updatedAt(section.getUpdatedAt())
+                .ids(ids)
+                .data(data)
+                .build();
+    }
 }

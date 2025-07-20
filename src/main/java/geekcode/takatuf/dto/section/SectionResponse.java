@@ -19,4 +19,6 @@ public class SectionResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<Long> ids;
+    private List<?> data;
+
 }

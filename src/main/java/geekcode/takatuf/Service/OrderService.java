@@ -2,8 +2,7 @@ package geekcode.takatuf.Service;
 
 import geekcode.takatuf.Entity.*;
 import geekcode.takatuf.Enums.PaymentMethod;
-import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
-import geekcode.takatuf.Exception.Types.UnauthorizedException;
+import geekcode.takatuf.Exception.Types.*;
 import geekcode.takatuf.Repository.*;
 import geekcode.takatuf.Enums.OfferStatus;
 import geekcode.takatuf.Enums.OrderStatus;
@@ -20,7 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
@@ -32,6 +32,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +49,7 @@ public class OrderService {
         private final SellerCategoryRepository sellerCategoryRepository;
         private final PendingOrderItemRepository pendingOrderItemRepository;
         private final PendingOrderRepository pendingOrderRepository;
+        private final String uploadDir = "uploads/custom_orders/";
 
         @Transactional
         public OrderResponse placeCustomOrder(Long userId, PlaceOrderRequest request) {
@@ -77,22 +79,7 @@ public class OrderService {
                 String imagePath = null;
                 MultipartFile imageFile = request.getImageFile();
                 if (imageFile != null && !imageFile.isEmpty()) {
-                        try {
-                                String uploadsDir = "uploads/custom_orders/";
-                                Path uploadPath = Paths.get(uploadsDir);
-                                if (!Files.exists(uploadPath)) {
-                                        Files.createDirectories(uploadPath);
-                                }
-
-                                String originalFilename = imageFile.getOriginalFilename();
-                                String fileName = System.currentTimeMillis() + "_" + originalFilename;
-                                Path filePath = uploadPath.resolve(fileName);
-                                Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                                imagePath = uploadsDir + fileName;
-                        } catch (Exception e) {
-                                throw new RuntimeException("Failed to store image file", e);
-                        }
+                        imagePath = saveCustomOrderImage(imageFile);
                 }
 
                 Order customOrder = Order.builder()
@@ -111,6 +98,28 @@ public class OrderService {
 
                 Order savedOrder = orderRepository.save(customOrder);
                 return mapToOrderResponse(savedOrder);
+        }
+
+        private String saveCustomOrderImage(MultipartFile file) {
+                try {
+                        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+                        Path uploadPath = Paths.get("uploads/custom_orders/");
+
+                        if (!Files.exists(uploadPath)) {
+                                Files.createDirectories(uploadPath);
+                        }
+
+                        Path filePath = uploadPath.resolve(fileName);
+                        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                                        .path("/uploads/custom_orders/")
+                                        .path(fileName)
+                                        .toUriString();
+
+                } catch (IOException e) {
+                        throw new BadRequestException("Failed to store image");
+                }
         }
 
         @Transactional
@@ -223,8 +232,13 @@ public class OrderService {
                 Order order = orderRepository.findById(orderId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
-                if (!order.getUser().getId().equals(user.getId())) {
-                        throw new UnauthorizedException("Unauthorized to view this order");
+                if (user.getType() == UserType.BUYER) {
+                        if (!order.getUser().getId().equals(user.getId())) {
+                                throw new UnauthorizedException("Buyers can only track their own orders");
+                        }
+                } else if (user.getType() != UserType.SELLER) {
+
+                        throw new UnauthorizedException("Only buyers and sellers can track orders");
                 }
 
                 return mapToOrderResponse(order);
@@ -232,7 +246,7 @@ public class OrderService {
 
         private OrderResponse mapToOrderResponse(Order order) {
                 List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
-
+                User buyer = order.getUser();
                 return OrderResponse.builder()
                                 .orderId(order.getId())
                                 .name(order.getName())
@@ -250,6 +264,8 @@ public class OrderService {
                                 .proposedPrice(order.getProposedPrice())
                                 .categoryId(order.getCategory() != null ? order.getCategory().getId() : null)
                                 .categoryName(order.getCategory() != null ? order.getCategory().getName() : null)
+                                .buyerName(buyer.getName())
+                                .buyerImageUrl(buyer.getProfileImageUrl())
                                 .build();
         }
 
