@@ -164,22 +164,21 @@ public class SliderService {
         return mapToResponse(slider);
     }
 
-    public PaginatedResponse<SliderResponse> getAllSlidersPaginated(int page, int perPage, String q, String sort,
-                                                                     String sortDir) {
+   public PaginatedResponse<SliderResponse> getAllSlidersPaginated(int page, int perPage, String q, String sort, String sortDir) {
+    try {
         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Page<Slider> slidersPage;
-
-        if (q != null && !q.trim().isEmpty()) {
-            slidersPage = sliderRepository.findByTitleContainingIgnoreCase(q, pageable);
-        } else {
-            slidersPage = sliderRepository.findAll(pageable);
-        }
+        Page<Slider> slidersPage = (q != null && !q.trim().isEmpty())
+                ? sliderRepository.findByTitleContainingIgnoreCase(q, pageable)
+                : sliderRepository.findAll(pageable);
 
         List<SliderResponse> data = slidersPage.map(this::mapToResponse).getContent();
         return new PaginatedResponse<>(data, slidersPage.getTotalElements(), page, perPage);
+    } catch (IllegalArgumentException e) {
+        throw new BadRequestException("Invalid sort field: " + sort);
     }
+}
 
     public List<SliderResponse> getAllSliders() {
         List<Slider> sliders = sliderRepository.findAll();

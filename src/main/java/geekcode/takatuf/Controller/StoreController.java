@@ -120,15 +120,17 @@ public class StoreController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "per_page", defaultValue = "10") int perPage,
+            @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "ASC") String sortDir) {
+            @RequestParam(name = "sort_dir", defaultValue = "ASC") String sortDir) {
 
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
 
-        PaginatedResponse<StoreResponse> stores = storeService.getStoresByOwnerPaginated(userDetails.getUsername(),
-                page, perPage, sort, sortDir);
+        PaginatedResponse<StoreResponse> stores = storeService.getStoresByOwnerPaginated(
+                userDetails.getUsername(), page, perPage, q, sort, sortDir);
+
         return ResponseEntity.ok(stores);
     }
 

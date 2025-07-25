@@ -16,6 +16,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByStatus(String status);
 
     Page<Complaint> findBySubmittedBy_Type(UserType userType, Pageable pageable);
+Page<Complaint> findBySubmittedBy_TypeAndSubjectContainingIgnoreCase(UserType type, String subject, Pageable pageable);
 
 
 }

@@ -85,13 +85,19 @@ public class CategoryService {
     public PaginatedResponse<CategoryResponse> getCategoriesPaginated(
             int page,
             int perPage,
+            String q,
             String sort,
             String sortDir) {
 
         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Page<Category> pageResult = categoryRepository.findAll(pageable);
+        Page<Category> pageResult;
+        if (q != null && !q.trim().isEmpty()) {
+            pageResult = categoryRepository.findByNameContainingIgnoreCase(q, pageable);
+        } else {
+            pageResult = categoryRepository.findAll(pageable);
+        }
 
         List<CategoryResponse> data = pageResult.getContent()
                 .stream()

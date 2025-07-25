@@ -60,15 +60,14 @@ public class CategoryController {
     }
 
     @GetMapping("/paginated")
-    public ResponseEntity<PaginatedResponse<CategoryResponse>> getPaginatedCategories(
+    public ResponseEntity<PaginatedResponse<CategoryResponse>> getCategoriesPaginated(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int perPage,
-            @RequestParam(defaultValue = "name") String sort,
-            @RequestParam(defaultValue = "ASC") String sortDir) {
+            @RequestParam(name = "per_page", defaultValue = "10") int perPage,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(name = "sort_dir", defaultValue = "DESC") String sortDir) {
 
-        PaginatedResponse<CategoryResponse> response = categoryService.getCategoriesPaginated(page, perPage, sort,
-                sortDir);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(categoryService.getCategoriesPaginated(page, perPage, q, sort, sortDir));
     }
 
     @GetMapping("/all")

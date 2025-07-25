@@ -1,13 +1,14 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Service.PromotionService;
-import geekcode.takatuf.dto.promotion.PromotionDto.PromotionRequest;
-import geekcode.takatuf.dto.promotion.PromotionDto.PromotionResponse;
+import geekcode.takatuf.dto.promotion.PromotionRequest;
+import geekcode.takatuf.dto.promotion.PromotionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,10 +19,10 @@ public class PromotionController {
 
     private final PromotionService promotionService;
 
-    @PostMapping("/add")
+    @PostMapping(value = "/add", consumes = "multipart/form-data")
     public ResponseEntity<PromotionResponse> createPromotion(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PromotionRequest request) {
+            @ModelAttribute PromotionRequest request) {
 
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
@@ -31,11 +32,11 @@ public class PromotionController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/update/{id}")
+    @PostMapping(value = "/update/{id}", consumes = "multipart/form-data")
     public ResponseEntity<PromotionResponse> updatePromotion(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PromotionRequest request) {
+            @ModelAttribute PromotionRequest request) {
 
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
@@ -47,19 +48,29 @@ public class PromotionController {
 
     @GetMapping("/all")
     public ResponseEntity<List<PromotionResponse>> getAllPromotions() {
-        List<PromotionResponse> promotions = promotionService.getAllPromotions();
-        return ResponseEntity.ok(promotions);
+        return ResponseEntity.ok(promotionService.getAllPromotions());
     }
 
-    @GetMapping("/active")
-    public ResponseEntity<List<PromotionResponse>> getActivePromotions() {
-        List<PromotionResponse> promotions = promotionService.getActivePromotions();
-        return ResponseEntity.ok(promotions);
+    @GetMapping("/filter")
+    public ResponseEntity<List<PromotionResponse>> getPromotionsByActive(
+            @RequestParam(required = false) Boolean active) {
+        return ResponseEntity.ok(promotionService.getPromotionsByActiveStatus(active));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PromotionResponse> getPromotionById(@PathVariable Long id) {
-        PromotionResponse promotion = promotionService.getPromotionById(id);
-        return ResponseEntity.ok(promotion);
+        return ResponseEntity.ok(promotionService.getPromotionById(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePromotion(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        promotionService.deletePromotion(id);
+        return ResponseEntity.noContent().build();
     }
 }

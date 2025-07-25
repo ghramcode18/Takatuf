@@ -101,7 +101,7 @@ public class StoreService {
 
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/stores/"); 
+            Path uploadPath = Paths.get("uploads/stores/");
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -137,7 +137,7 @@ public class StoreService {
     }
 
     public PaginatedResponse<StoreResponse> getStoresByOwnerPaginated(
-            String username, int page, int perPage, String sort, String sortDir) {
+            String username, int page, int perPage, String q, String sort, String sortDir) {
 
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new BadRequestException("User not found."));
@@ -145,7 +145,10 @@ public class StoreService {
         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Page<Store> storesPage = storeRepository.findByOwner_Id(user.getId(), pageable);
+        Page<Store> storesPage = (q != null && !q.trim().isEmpty())
+                ? storeRepository.findByOwner_IdAndNameContainingIgnoreCase(user.getId(), q, pageable)
+                : storeRepository.findByOwner_Id(user.getId(), pageable);
+
         List<StoreResponse> responses = storesPage.getContent().stream()
                 .map(this::mapToResponse)
                 .toList();

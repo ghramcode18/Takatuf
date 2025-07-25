@@ -76,14 +76,15 @@ public class ComplaintController {
     public ResponseEntity<PaginatedResponse<ComplaintResponse>> getComplaintsByUserTypePaginated(
             @RequestParam UserType userType,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int perPage,
+            @RequestParam(name = "per_page", defaultValue = "10") int perPage,
+            @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "createdAt") String sort,
-            @RequestParam(defaultValue = "DESC") String sortDir,
+            @RequestParam(name = "sort_dir", defaultValue = "DESC") String sortDir,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = getAuthenticatedUser(userDetails);
         PaginatedResponse<ComplaintResponse> response = complaintService.getComplaintsByUserTypePaginated(
-                user.getId(), userType, page, perPage, sort, sortDir);
+                user.getId(), userType, page, perPage, q, sort, sortDir);
 
         return ResponseEntity.ok(response);
     }
