@@ -18,4 +18,5 @@ public class HomeController {
         HomeResponse response = homeService.getHomeData();
         return ResponseEntity.ok(response);
     }
+
 }

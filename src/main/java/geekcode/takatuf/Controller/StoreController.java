@@ -66,15 +66,8 @@ public class StoreController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<StoreResponse> getStore(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
+    @GetMapping("/api/store/{id}")
+    public ResponseEntity<StoreResponse> getStore(@PathVariable Long id) {
         StoreResponse response = storeService.getStoreById(id);
         return ResponseEntity.ok(response);
     }
@@ -93,12 +86,7 @@ public class StoreController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<StoreResponse>> getAllStores(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
+    public ResponseEntity<List<StoreResponse>> getAllStores() {
         List<StoreResponse> stores = storeService.getAllStores();
         return ResponseEntity.ok(stores);
     }

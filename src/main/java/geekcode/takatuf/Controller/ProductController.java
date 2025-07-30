@@ -79,13 +79,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (userDetails == null)
-            return ResponseEntity.status(401).build();
-
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
@@ -96,14 +90,9 @@ public class ProductController {
             @RequestParam(name = "per_page", defaultValue = "10") int perPage,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "ASC") String sortDir,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @RequestParam(defaultValue = "ASC") String sortDir) {
 
-        if (userDetails == null)
-            return ResponseEntity.status(401).build();
-
-        return ResponseEntity.ok(productService.getProductsByStoreId(
-                storeId, page, perPage, q, sort, sortDir));
+        return ResponseEntity.ok(productService.getProductsByStoreId(storeId, page, perPage, q, sort, sortDir));
     }
 
     @DeleteMapping("/delete/{id}")
@@ -119,27 +108,18 @@ public class ProductController {
     }
 
     @GetMapping("/store/{storeId}/all-products")
-    public ResponseEntity<List<ProductResponse>> getAllStoreProducts(
-            @PathVariable Long storeId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (userDetails == null)
-            return ResponseEntity.status(401).build();
-
+    public ResponseEntity<List<ProductResponse>> getAllStoreProducts(@PathVariable Long storeId) {
         return ResponseEntity.ok(productService.getAllProductsByStoreId(storeId));
     }
 
     @GetMapping("/category/{categoryId}/products")
-    public ResponseEntity<List<ProductResponse>> getProductsByCategoryId(
-            @PathVariable Long categoryId) {
-
+    public ResponseEntity<List<ProductResponse>> getProductsByCategoryId(@PathVariable Long categoryId) {
         return ResponseEntity.ok(productService.getProductsByCategoryId(categoryId));
     }
 
     @PostMapping("/search")
     public ResponseEntity<List<ProductResponse>> searchProducts(@RequestBody ProductSearchRequest request) {
-        List<ProductResponse> results = productService.searchProducts(
-                request.getSearch(), request.getIds());
+        List<ProductResponse> results = productService.searchProducts(request.getSearch(), request.getIds());
         return ResponseEntity.ok(results);
     }
 
