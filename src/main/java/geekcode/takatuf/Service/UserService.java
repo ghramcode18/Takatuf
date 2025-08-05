@@ -1,5 +1,6 @@
 package geekcode.takatuf.Service;
 
+import geekcode.takatuf.Enums.UserType;
 import geekcode.takatuf.dto.user.UpdateUserRequest;
 import geekcode.takatuf.dto.user.UserResponse;
 import geekcode.takatuf.Entity.User;
@@ -125,7 +126,7 @@ public class UserService {
 
     public List<User> findAllExcept(Long currentUserId) {
         return userRepository.findAll().stream()
-                .filter(user -> !user.getId().equals(currentUserId))
+                .filter(user -> !user.getId().equals(currentUserId) && user.getType() == UserType.BUYER)
                 .collect(Collectors.toList());
     }
 }
