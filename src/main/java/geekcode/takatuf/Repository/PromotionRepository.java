@@ -12,6 +12,8 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
 
     List<Promotion> findByStoreId(Long storeId);
 
-    List<Promotion> findByActiveTrueAndStartDateBeforeAndEndDateAfter(LocalDateTime now1, LocalDateTime now2);
+    List<Promotion> findByActiveAndStartDateBeforeAndEndDateAfter(Boolean active, LocalDateTime start, LocalDateTime end);
+    List<Promotion> findByActive(Boolean active);
+
 
 }

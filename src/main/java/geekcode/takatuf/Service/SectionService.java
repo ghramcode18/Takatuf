@@ -155,21 +155,21 @@ public class SectionService {
         return mapToResponse(section);
     }
 
-    public PaginatedResponse<SectionResponse> getAllSectionsPaginated(int page, int perPage, String q, String sort,
-            String sortDir) {
+public PaginatedResponse<SectionResponse> getAllSectionsPaginated(int page, int perPage, String q, String sort, String sortDir) {
+    try {
         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Page<Section> pageResult;
-        if (q != null && !q.trim().isEmpty()) {
-            pageResult = sectionRepository.findByNameContainingIgnoreCase(q, pageable);
-        } else {
-            pageResult = sectionRepository.findAll(pageable);
-        }
+        Page<Section> pageResult = (q != null && !q.trim().isEmpty())
+                ? sectionRepository.findByNameContainingIgnoreCase(q, pageable)
+                : sectionRepository.findAll(pageable);
 
         List<SectionResponse> data = pageResult.map(this::mapToResponse).getContent();
         return new PaginatedResponse<>(data, pageResult.getTotalElements(), page, perPage);
+    } catch (IllegalArgumentException e) {
+        throw new BadRequestException("Invalid sort field: " + sort);
     }
+}
 
     public List<SectionResponse> getAllSections() {
         List<Section> sections = sectionRepository.findAll();

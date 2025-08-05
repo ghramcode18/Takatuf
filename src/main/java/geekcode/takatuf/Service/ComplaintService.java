@@ -119,6 +119,7 @@ public class ComplaintService {
                         UserType userType,
                         int page,
                         int perPage,
+                        String q,
                         String sort,
                         String sortDir) {
 
@@ -132,7 +133,10 @@ public class ComplaintService {
                 Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
                 Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-                Page<Complaint> pageResult = complaintRepository.findBySubmittedBy_Type(userType, pageable);
+                Page<Complaint> pageResult = (q != null && !q.trim().isEmpty())
+                                ? complaintRepository.findBySubmittedBy_TypeAndSubjectContainingIgnoreCase(userType, q,
+                                                pageable)
+                                : complaintRepository.findBySubmittedBy_Type(userType, pageable);
 
                 List<ComplaintResponse> data = pageResult.map(this::mapToResponse).getContent();
 

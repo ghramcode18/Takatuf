@@ -25,7 +25,7 @@ public class Promotion {
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-
+    private String imageUrl;
     private Boolean active;
 
     @Enumerated(EnumType.STRING)
