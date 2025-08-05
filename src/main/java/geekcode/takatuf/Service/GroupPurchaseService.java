@@ -136,7 +136,7 @@ public class GroupPurchaseService {
         GroupPurchaseOrder order = GroupPurchaseOrder.builder()
                 .invitation(invitation)
                 .creator(creator)
-                .productId(invitation.getGroupId())
+                .productId(invitation.getProductId())
                 .participants(List.of(creator, invitation.getReceiver()))
                 .createdAt(LocalDateTime.now())
                 .status(GroupPurchaseStatus.IN_PROGRESS)
