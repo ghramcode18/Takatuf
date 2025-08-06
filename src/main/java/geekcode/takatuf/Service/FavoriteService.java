@@ -79,5 +79,10 @@ public class FavoriteService {
                 .map(store -> storeService.getStoreById(store.getId()))
                 .toList();
     }
+
+    public void removeAllFavorites(Long userId) {
+
+        favoriteRepository.deleteByUserId(userId);
     }
 
+}

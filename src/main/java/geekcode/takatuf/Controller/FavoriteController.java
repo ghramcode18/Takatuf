@@ -1,4 +1,5 @@
 package geekcode.takatuf.Controller;
+
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Service.*;
 import geekcode.takatuf.dto.product.*;
@@ -9,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
+import geekcode.takatuf.Exception.Types.*;
 import java.util.List;
 
 @RestController
@@ -80,6 +81,18 @@ public class FavoriteController {
         return userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow()
                 .getId();
+    }
+
+    @DeleteMapping("/clear")
+    public ResponseEntity<Void> clearFavorites(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        favoriteService.removeAllFavorites(user.getId());
+        return ResponseEntity.noContent().build();
     }
 
 }
