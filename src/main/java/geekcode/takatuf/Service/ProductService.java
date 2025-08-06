@@ -171,27 +171,26 @@ public class ProductService {
         }
     }
 
-  public List<ProductResponse> searchProducts(String search, List<Long> ids) {
-    List<Product> products;
+    public List<ProductResponse> searchProducts(String search, List<Long> ids) {
+        List<Product> products;
 
-    boolean hasSearch = search != null && !search.trim().isEmpty();
-    boolean hasIds = ids != null && !ids.isEmpty();
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        boolean hasIds = ids != null && !ids.isEmpty();
 
-    if (hasSearch && hasIds) {
-        products = productRepository.findByNameContainingIgnoreCaseAndIdIn(search.trim(), ids);
-    } else if (hasSearch) {
-        products = productRepository.findByNameContainingIgnoreCase(search.trim());
-    } else if (hasIds) {
-        products = productRepository.findByIdIn(ids);
-    } else {
-        return List.of();
+        if (hasSearch && hasIds) {
+            products = productRepository.findByNameContainingIgnoreCaseAndIdIn(search.trim(), ids);
+        } else if (hasSearch) {
+            products = productRepository.findByNameContainingIgnoreCase(search.trim());
+        } else if (hasIds) {
+            products = productRepository.findByIdIn(ids);
+        } else {
+            return List.of();
+        }
+
+        return products.stream()
+                .map(this::buildProductResponse)
+                .toList();
     }
-
-    return products.stream()
-            .map(this::buildProductResponse)
-            .toList();
-}
-
 
     private ProductResponse buildProductResponse(Product product) {
         Store store = product.getStore();
