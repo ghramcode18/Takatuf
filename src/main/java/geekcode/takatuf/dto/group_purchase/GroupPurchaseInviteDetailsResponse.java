@@ -13,6 +13,7 @@ public class GroupPurchaseInviteDetailsResponse {
     private String productPhoto;
     private Double oldPrice;
     private Double newPrice;
+    private String InviteStatus;
 
     private String senderName;
     private String senderPhoto;

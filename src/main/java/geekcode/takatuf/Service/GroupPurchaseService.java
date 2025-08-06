@@ -82,6 +82,7 @@ public class GroupPurchaseService {
                 product.getImage(),
                 oldPrice,
                 newPrice,
+                invite.getStatus().toString(),
                 sender.getName(),
                 sender.getProfileImageUrl(),
                 receiver.getName(),
@@ -136,7 +137,7 @@ public class GroupPurchaseService {
         GroupPurchaseOrder order = GroupPurchaseOrder.builder()
                 .invitation(invitation)
                 .creator(creator)
-                .productId(invitation.getGroupId())
+                .productId(invitation.getProductId())
                 .participants(List.of(creator, invitation.getReceiver()))
                 .createdAt(LocalDateTime.now())
                 .status(GroupPurchaseStatus.IN_PROGRESS)
@@ -218,14 +219,14 @@ public class GroupPurchaseService {
     public List<GroupPurchaseInviteResponse> getReceivedInvites(Long userId) {
         return inviteRepository.findByReceiverIdOrderByCreatedAtDesc(userId)
                 .stream()
-                .map(this::mapToDto)
+                .map(this::mapToDtoSender)
                 .toList();
     }
 
 
     private GroupPurchaseInviteResponse mapToDto(GroupPurchaseInvite invite) {
         boolean currentIsSender = invite.getSender().getId().equals(invite.getReceiver().getId());
-        var other = currentIsSender ? invite.getReceiver() : invite.getSender();
+        var other = currentIsSender ? invite.getReceiver() : invite.getReceiver();
 
         return new GroupPurchaseInviteResponse(
                 invite.getId(),
@@ -240,4 +241,20 @@ public class GroupPurchaseService {
         );
     }
 
+    private GroupPurchaseInviteResponse mapToDtoSender(GroupPurchaseInvite invite) {
+        boolean currentIsSender = invite.getSender().getId().equals(invite.getReceiver().getId());
+        var other = currentIsSender ? invite.getSender() : invite.getSender();
+
+        return new GroupPurchaseInviteResponse(
+                invite.getId(),
+                other.getId(),
+                other.getName(),
+                other.getProfileImageUrl(),
+                invite.getMessage(),
+                invite.getStatus(),
+                invite.getCreatedAt(),
+                invite.getExpiresAt(),
+                invite.getRespondedAt()
+        );
+    }
 }
