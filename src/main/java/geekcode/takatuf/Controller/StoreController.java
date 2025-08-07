@@ -66,7 +66,7 @@ public class StoreController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/api/store/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<StoreResponse> getStore(@PathVariable Long id) {
         StoreResponse response = storeService.getStoreById(id);
         return ResponseEntity.ok(response);
