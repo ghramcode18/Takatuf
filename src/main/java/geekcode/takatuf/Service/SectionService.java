@@ -152,7 +152,7 @@ public class SectionService {
     public SectionResponse getSectionById(Long id) {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
-        return mapToResponse(section);
+       return mapToResponseWithData(section);
     }
 
 public PaginatedResponse<SectionResponse> getAllSectionsPaginated(int page, int perPage, String q, String sort, String sortDir) {
