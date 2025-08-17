@@ -10,6 +10,7 @@ import org.springframework.data.domain.*;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
+import geekcode.takatuf.Repository.FavoriteRepository;
 import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
@@ -34,6 +35,7 @@ public class StoreService {
     private final UserRepository userRepository;
     private final StoreReviewRepository storeReviewRepository;
     private final ProductRepository productRepository;
+    private final FavoriteRepository favoriteRepository;
 
     public StoreResponse createStore(String username, StoreRequest request) {
         if (storeRepository.existsByName(request.getName())) {
@@ -119,10 +121,16 @@ public class StoreService {
         }
     }
 
+    public StoreResponse getStoreByIdForViewer(Long storeId, Long viewerId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+        return mapToResponse(store, viewerId);
+    }
+
     public StoreResponse getStoreById(Long storeId) {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
-        return mapToResponse(store);
+        return mapToResponse(store, null);
     }
 
     public List<StoreResponse> getStoresByOwner(String username) {
@@ -156,7 +164,7 @@ public class StoreService {
         return new PaginatedResponse<>(responses, storesPage.getTotalElements(), page, perPage);
     }
 
-    private StoreResponse mapToResponse(Store store) {
+    private StoreResponse mapToResponse(Store store, Long viewerId) {
         List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());
         double averageRating = reviews.stream()
                 .mapToInt(StoreReview::getRating)
@@ -164,6 +172,11 @@ public class StoreService {
                 .orElse(0.0);
 
         long totalProducts = productRepository.countByStoreId(store.getId());
+
+        Boolean favorited = null;
+        if (viewerId != null) {
+            favorited = favoriteRepository.existsByUserIdAndStore_Id(viewerId, store.getId());
+        }
 
         return StoreResponse.builder()
                 .id(store.getId())
@@ -176,7 +189,12 @@ public class StoreService {
                 .averageRating(averageRating)
                 .totalReviews(reviews.size())
                 .totalProducts(totalProducts)
+                .favorited(favorited)
                 .build();
+    }
+
+    private StoreResponse mapToResponse(Store store) {
+        return mapToResponse(store, null);
     }
 
     public void deleteStore(Long storeId, String userEmail) {

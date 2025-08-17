@@ -27,4 +27,5 @@ public class ProductResponse {
     private String sellerName;
     private String sellerImage;
     private Double averageRating;
+    private Boolean favorited; 
 }
