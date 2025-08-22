@@ -4,12 +4,16 @@ import geekcode.takatuf.Service.ProductService;
 import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.product.ProductResponse;
 import geekcode.takatuf.dto.product.ProductSearchRequest;
+import geekcode.takatuf.Repository.UserRepository;
+import geekcode.takatuf.Entity.User;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -19,6 +23,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final UserRepository userRepository;
 
     @PostMapping("/add/{storeId}")
     public ResponseEntity<ProductResponse> addProduct(
@@ -79,8 +84,18 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductById(id));
+    public ResponseEntity<ProductResponse> getProductById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long viewerId = null;
+        if (userDetails != null) {
+            viewerId = userRepository.findByEmail(userDetails.getUsername())
+                    .map(User::getId)
+                    .orElse(null);
+        }
+
+        return ResponseEntity.ok(productService.getProductByIdForViewer(id, viewerId));
     }
 
     @GetMapping("/store/{storeId}/products")
@@ -122,5 +137,4 @@ public class ProductController {
         List<ProductResponse> results = productService.searchProducts(request.getSearch(), request.getIds());
         return ResponseEntity.ok(results);
     }
-
 }
