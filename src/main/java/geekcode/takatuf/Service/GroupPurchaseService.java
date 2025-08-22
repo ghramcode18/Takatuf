@@ -105,7 +105,7 @@ public class GroupPurchaseService {
 
             inviteRepository.saveAll(invites);
 
-            System.out.println("⏳ تم تحديث الدعوات المنتهية تلقائيًا.");
+            //System.out.println("⏳ تم تحديث الدعوات المنتهية تلقائيًا.");
         }
 
     @Transactional
