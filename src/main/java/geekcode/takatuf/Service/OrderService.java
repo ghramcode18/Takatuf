@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -278,6 +277,37 @@ public class OrderService {
                                 .build();
         }
 
+
+        private OrderResponseById mapToOrderResponseById(Order order) {
+                List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
+                User buyer = order.getUser();
+                return OrderResponseById.builder()
+                        .orderId(order.getId())
+                        .buildingNumber(order.getBuildingNumber())
+                        .region(order.getRegion())
+                        .streetName(order.getStreetName())
+                        .paymentMethod(order.getPaymentMethod())
+                        .phoneNumber(order.getPhoneNumber())
+                        .name(order.getName())
+                        .status(order.getStatus())
+                        .trackingInfo(order.getTrackingInfo())
+                        .totalPrice(order.getTotalPrice())
+                        .orderType(order.getOrderType())
+                        .createdAt(order.getCreatedAt())
+                        .updatedAt(order.getUpdatedAt())
+                        .items(items != null ? items.stream().map(this::mapToOrderByIdItemDto)
+                                .collect(Collectors.toList()) : Collections.emptyList())
+                        .customizationDetails(order.getCustomizationDetails())
+                        .imageUrl(order.getImageUrl())
+                        .buyerProposedPrice(order.getBuyerProposedPrice())
+                        .proposedPrice(order.getProposedPrice())
+                        .categoryId(order.getCategory() != null ? order.getCategory().getId() : null)
+                        .categoryName(order.getCategory() != null ? order.getCategory().getName() : null)
+                        .buyerName(buyer.getName())
+                        .buyerImageUrl(buyer.getProfileImageUrl())
+                        .build();
+        }
+
         private OrderResponse.OrderItemResponse mapToOrderItemDto(OrderItem orderItem) {
                 return OrderResponse.OrderItemResponse.builder()
                                 .productId(orderItem.getProduct().getId())
@@ -286,6 +316,17 @@ public class OrderService {
                                 .price(orderItem.getPrice())
                                 .build();
         }
+
+        private OrderResponseById.OrderItemResponse mapToOrderByIdItemDto(OrderItem orderItem) {
+                return OrderResponseById.OrderItemResponse.builder()
+                        .productId(orderItem.getProduct().getId())
+                        .productName(orderItem.getProduct().getName())
+                        .quantity(orderItem.getQuantity())
+                        .price(orderItem.getPrice())
+                        .build();
+        }
+
+
 
         public OrderResponse getCustomOrderById(Long orderId, String username) {
                 User user = userRepository.findByEmail(username)
@@ -598,7 +639,6 @@ public class OrderService {
 
                         orderRepository.save(order);
 
-                        // تحديث العلاقة بعد حفظ الطلب
                         for (OrderItem item : orderItems) {
                                 item.setOrder(order);
                         }
@@ -647,7 +687,7 @@ public class OrderService {
                                 .toList();
         }
 
-        public List<OrderResponse> getOrderById(Long userId, Long orderId) {
+        public List<OrderResponseById> getOrderById(Long userId, Long orderId) {
                 User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -656,9 +696,35 @@ public class OrderService {
                 return orders.stream()
                                 .map(order -> {
                                         List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
-                                        return mapToOrderResponse(order, items);
+                                        return mapToOrderResponseById(order);
                                 })
                                 .toList();
+        }
+
+        public Long updateCustomOrderAddress(Long orderId, AddressRequest addressRequest) {
+                Order Order = orderRepository.findById(orderId)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Pending order not found : " + orderId));
+
+                Order.setRegion(addressRequest.getRegion());
+                Order.setStreetName(addressRequest.getStreetName());
+                Order.setBuildingNumber(addressRequest.getBuildingNumber());
+                Order.setPhoneNumber(addressRequest.getPhoneNumber());
+                Order.setUpdatedAt(LocalDateTime.now());
+                orderRepository.save(Order);
+                return Order.getId();
+        }
+
+        public Long updateCustomOrderPayment(Long orderId, PaymentMethod paymentMethod) {
+                Order order = orderRepository.findById(orderId)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Pending order not found : " + orderId));
+
+                order.setPaymentMethod(paymentMethod);
+                order.setUpdatedAt(LocalDateTime.now());
+
+                orderRepository.save(order);
+                return order.getId();
         }
 
 }

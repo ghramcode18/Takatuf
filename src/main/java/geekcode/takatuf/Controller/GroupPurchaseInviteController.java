@@ -1,13 +1,11 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Entity.GroupPurchaseInvite;
-import geekcode.takatuf.Entity.GroupPurchaseOrder;
-import geekcode.takatuf.Entity.Message;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.GroupPurchaseService;
-import geekcode.takatuf.dto.GroupPurchaseInviteResponse;
+import geekcode.takatuf.dto.group_purchase.GroupPurchaseInviteResponse;
 import geekcode.takatuf.dto.MessageResponse;
 import geekcode.takatuf.dto.group_purchase.GroupPurchaseInviteDetailsResponse;
 import geekcode.takatuf.dto.group_purchase.SendInviteRequest;

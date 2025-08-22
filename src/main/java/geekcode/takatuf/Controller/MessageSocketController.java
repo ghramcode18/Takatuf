@@ -1,7 +1,7 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Service.MessageService;
-import geekcode.takatuf.dto.ChatMessage;
+import geekcode.takatuf.dto.chat.ChatMessage;
 import geekcode.takatuf.Entity.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
