@@ -3,7 +3,10 @@ package geekcode.takatuf.dto;
 import geekcode.takatuf.dto.slider.SliderResponse;
 import lombok.Builder;
 import lombok.Data;
-
+import geekcode.takatuf.dto.section.SectionResponse;
+import geekcode.takatuf.dto.slider.SliderResponse;
+import lombok.Builder;
+import lombok.Data;
 import java.util.List;
 import java.util.Map;
 

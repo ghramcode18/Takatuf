@@ -24,6 +24,7 @@ public class FavoriteService {
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
 
+    @Transactional
     public void addProductToFavorites(Long userId, Long productId) {
         if (favoriteRepository.existsByUserIdAndProduct_Id(userId, productId))
             return;
@@ -40,6 +41,7 @@ public class FavoriteService {
         favoriteRepository.save(favorite);
     }
 
+    @Transactional
     public void removeProductFromFavorites(Long userId, Long productId) {
         favoriteRepository.deleteByUserIdAndProduct_Id(userId, productId);
     }
@@ -48,10 +50,11 @@ public class FavoriteService {
         return favoriteRepository.findByUserIdAndType(userId, FavoriteType.PRODUCT)
                 .stream()
                 .map(Favorite::getProduct)
-                .map(product -> productService.getProductById(product.getId()))
+                .map(p -> productService.getProductByIdForViewer(p.getId(), userId))
                 .toList();
     }
 
+    @Transactional
     public void addStoreToFavorites(Long userId, Long storeId) {
         if (favoriteRepository.existsByUserIdAndStore_Id(userId, storeId))
             return;
@@ -68,6 +71,7 @@ public class FavoriteService {
         favoriteRepository.save(favorite);
     }
 
+    @Transactional
     public void removeStoreFromFavorites(Long userId, Long storeId) {
         favoriteRepository.deleteByUserIdAndStore_Id(userId, storeId);
     }
@@ -76,10 +80,11 @@ public class FavoriteService {
         return favoriteRepository.findByUserIdAndType(userId, FavoriteType.STORE)
                 .stream()
                 .map(Favorite::getStore)
-                .map(store -> storeService.getStoreById(store.getId()))
+                .map(s -> storeService.getStoreByIdForViewer(s.getId(), userId))
                 .toList();
     }
 
+    @Transactional
     public void removeAllFavorites(Long userId) {
 
         favoriteRepository.deleteByUserId(userId);

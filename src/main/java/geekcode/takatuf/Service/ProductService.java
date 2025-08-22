@@ -20,7 +20,7 @@ import java.io.IOException;
 @Service
 @RequiredArgsConstructor
 public class ProductService {
-
+    private final FavoriteRepository favoriteRepository;
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
     private final CategoryRepository categoryRepository;
@@ -109,10 +109,10 @@ public class ProductService {
         return buildProductResponse(productRepository.save(product));
     }
 
-    public ProductResponse getProductById(Long productId) {
+    public ProductResponse getProductByIdForViewer(Long productId, Long viewerId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BadRequestException("Product not found"));
-        return buildProductResponse(product);
+        return buildProductResponse(product, viewerId);
     }
 
     public PaginatedResponse<ProductResponse> getProductsByStoreId(Long storeId, int page, int perPage,
@@ -192,7 +192,7 @@ public class ProductService {
                 .toList();
     }
 
-    private ProductResponse buildProductResponse(Product product) {
+    private ProductResponse buildProductResponse(Product product, Long viewerId) {
         Store store = product.getStore();
         User owner = store.getOwner();
         String sellerImage = owner.getProfileImageUrl();
@@ -205,6 +205,11 @@ public class ProductService {
                         .mapToDouble(ProductReview::getRating)
                         .average()
                         .orElse(0.0);
+
+        Boolean favorited = null;
+        if (viewerId != null) {
+            favorited = favoriteRepository.existsByUserIdAndProduct_Id(viewerId, product.getId());
+        }
 
         return ProductResponse.builder()
                 .id(product.getId())
@@ -225,7 +230,16 @@ public class ProductService {
                 .sellerName(owner.getName())
                 .sellerImage(sellerImage)
                 .averageRating(avgRating)
+                .favorited(favorited)
                 .build();
+    }
+
+    private ProductResponse buildProductResponse(Product product) {
+        return buildProductResponse(product, null);
+    }
+
+    public ProductResponse getProductById(Long productId) {
+        return getProductByIdForViewer(productId, null);
     }
 
     private String saveImage(MultipartFile file) {
@@ -248,5 +262,6 @@ public class ProductService {
         } catch (IOException e) {
             throw new BadRequestException("Failed to save product image");
         }
+
     }
 }
