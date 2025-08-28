@@ -2,6 +2,7 @@ package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Service.SectionService;
 import geekcode.takatuf.dto.PaginatedResponse;
+import geekcode.takatuf.dto.section.SectionItemSortRequest;
 import geekcode.takatuf.dto.section.SectionRequest;
 import geekcode.takatuf.dto.section.SectionResponse;
 import geekcode.takatuf.dto.section.SectionSortRequest;
@@ -98,4 +99,16 @@ public class SectionController {
         sectionService.sortSections(userDetails.getUsername(), sortRequests);
         return ResponseEntity.ok().build();
     }
+
+@PostMapping("/{sectionId}/items/sort")
+public ResponseEntity<Void> sortSectionItems(
+        @PathVariable Long sectionId,
+        @RequestBody List<SectionItemSortRequest> sortRequests,
+        @AuthenticationPrincipal UserDetails userDetails) {
+
+    if (userDetails == null) return ResponseEntity.status(401).build();
+
+    sectionService.sortSectionItems(sectionId, sortRequests);
+    return ResponseEntity.ok().build();
+}
 }

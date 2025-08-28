@@ -19,6 +19,8 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 
     boolean existsByName(String name);
 
+    boolean existsByIdAndOwner_Id(Long storeId, Long ownerId);
+
     Page<Store> findByOwner_IdAndNameContainingIgnoreCase(Long ownerId, String name, Pageable pageable);
 
 }

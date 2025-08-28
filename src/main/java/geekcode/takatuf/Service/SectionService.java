@@ -1,8 +1,10 @@
 package geekcode.takatuf.Service;
 
+import geekcode.takatuf.dto.section.SectionItemSortRequest;
 import geekcode.takatuf.dto.section.SectionRequest;
 import geekcode.takatuf.dto.section.SectionResponse;
 import geekcode.takatuf.dto.section.SectionSortRequest;
+import jakarta.transaction.Transactional;
 import geekcode.takatuf.Entity.Section;
 import geekcode.takatuf.Entity.SectionItem;
 import geekcode.takatuf.Exception.Types.BadRequestException;
@@ -12,6 +14,7 @@ import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.SectionRepository;
 import geekcode.takatuf.Repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -80,6 +83,7 @@ public class SectionService {
         return mapToResponse(saved);
     }
 
+    @Transactional
     public SectionResponse updateSection(Long id, String username, SectionRequest request) {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new BadRequestException("Section not found."));
@@ -152,24 +156,25 @@ public class SectionService {
     public SectionResponse getSectionById(Long id) {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
-       return mapToResponseWithData(section);
+        return mapToResponseWithData(section);
     }
 
-public PaginatedResponse<SectionResponse> getAllSectionsPaginated(int page, int perPage, String q, String sort, String sortDir) {
-    try {
-        Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
+    public PaginatedResponse<SectionResponse> getAllSectionsPaginated(int page, int perPage, String q, String sort,
+            String sortDir) {
+        try {
+            Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+            Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Page<Section> pageResult = (q != null && !q.trim().isEmpty())
-                ? sectionRepository.findByNameContainingIgnoreCase(q, pageable)
-                : sectionRepository.findAll(pageable);
+            Page<Section> pageResult = (q != null && !q.trim().isEmpty())
+                    ? sectionRepository.findByNameContainingIgnoreCase(q, pageable)
+                    : sectionRepository.findAll(pageable);
 
-        List<SectionResponse> data = pageResult.map(this::mapToResponse).getContent();
-        return new PaginatedResponse<>(data, pageResult.getTotalElements(), page, perPage);
-    } catch (IllegalArgumentException e) {
-        throw new BadRequestException("Invalid sort field: " + sort);
+            List<SectionResponse> data = pageResult.map(this::mapToResponse).getContent();
+            return new PaginatedResponse<>(data, pageResult.getTotalElements(), page, perPage);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid sort field: " + sort);
+        }
     }
-}
 
     public List<SectionResponse> getAllSections() {
         List<Section> sections = sectionRepository.findAll();
@@ -190,6 +195,34 @@ public PaginatedResponse<SectionResponse> getAllSectionsPaginated(int page, int 
             sectionRepository.save(section);
         }
     }
+
+  @Transactional
+public void sortSectionItems(Long sectionId, List<SectionItemSortRequest> sortRequests) {
+    Section section = sectionRepository.findById(sectionId)
+            .orElseThrow(() -> new BadRequestException("Section not found."));
+
+    Map<Long, SectionItem> sectionItems = section.getItems().stream()
+            .collect(Collectors.toMap(this::getItemEntityId, it -> it));
+
+    for (SectionItemSortRequest req : sortRequests) {
+        SectionItem item = sectionItems.get(req.getItemId());
+        if (item == null) {
+            throw new BadRequestException(
+                "Item with entity id " + req.getItemId() + " does not belong to section " + sectionId);
+        }
+        item.setSortOrder(req.getSortOrder());
+    }
+
+    sectionRepository.save(section);
+}
+
+// Helper
+private Long getItemEntityId(SectionItem item) {
+    if (item.getProduct() != null) return item.getProduct().getId();
+    if (item.getStore() != null) return item.getStore().getId();
+    if (item.getCategory() != null) return item.getCategory().getId();
+    return null;
+}
 
     private SectionResponse mapToResponse(Section section) {
         List<Long> ids = section.getItems() != null

@@ -1,5 +1,5 @@
 package geekcode.takatuf.Enums;
 
 public enum OfferStatus {
-    ACTIVE, REJECTED
+    ACTIVE, REJECTED, ACCEPTED
 }
