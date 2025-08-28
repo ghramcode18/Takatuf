@@ -6,7 +6,7 @@ import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.MessageService;
-import geekcode.takatuf.dto.EditMessageRequest;
+import geekcode.takatuf.dto.chat.EditMessageRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

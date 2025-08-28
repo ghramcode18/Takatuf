@@ -28,6 +28,12 @@ public class Order {
     private String name;
     private String customizationDetails;
 
+
+    private String region;
+    private String streetName;
+    private String buildingNumber;
+    private String phoneNumber;
+
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)

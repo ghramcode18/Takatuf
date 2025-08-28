@@ -1,4 +1,4 @@
-package geekcode.takatuf.dto;
+package geekcode.takatuf.dto.group_purchase;
 
 
 import geekcode.takatuf.Enums.InviteStatus;

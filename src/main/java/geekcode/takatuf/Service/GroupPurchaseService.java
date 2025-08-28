@@ -7,12 +7,13 @@ import geekcode.takatuf.Enums.GroupPurchaseStatus;
 import geekcode.takatuf.Enums.InviteStatus;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
 import geekcode.takatuf.Repository.*;
+import geekcode.takatuf.dto.chat.ChatMessageNotification;
 import geekcode.takatuf.dto.group_purchase.GroupPurchaseInviteDetailsResponse;
+import geekcode.takatuf.dto.group_purchase.GroupPurchaseInviteResponse;
 import geekcode.takatuf.dto.group_purchase.SendInviteRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import geekcode.takatuf.Entity.User;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
-import geekcode.takatuf.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -105,7 +106,7 @@ public class GroupPurchaseService {
 
             inviteRepository.saveAll(invites);
 
-            System.out.println("⏳ تم تحديث الدعوات المنتهية تلقائيًا.");
+            //System.out.println("⏳ تم تحديث الدعوات المنتهية تلقائيًا.");
         }
 
     @Transactional

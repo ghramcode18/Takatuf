@@ -1,4 +1,4 @@
-package geekcode.takatuf.dto;
+package geekcode.takatuf.dto.chat;
 
 import java.time.LocalDateTime;
 

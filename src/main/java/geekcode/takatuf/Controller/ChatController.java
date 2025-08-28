@@ -11,6 +11,9 @@ import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.ChatService;
 import geekcode.takatuf.Service.MessageService;
 import geekcode.takatuf.dto.*;
+import geekcode.takatuf.dto.chat.ChatCreateRequest;
+import geekcode.takatuf.dto.chat.ChatResponse;
+import geekcode.takatuf.dto.chat.ChatSummaryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +37,7 @@ public class ChatController {
 
     @PostMapping("/create")
     public ResponseEntity<ChatResponse> createChat(@RequestBody ChatCreateRequest request,
-    @AuthenticationPrincipal UserDetails userDetails) {
+                                                   @AuthenticationPrincipal UserDetails userDetails) {
         Chat chat = chatService.createChat(request.getUser1Id(), request.getUser2Id());
         return ResponseEntity.ok(chatService.mapToResponse(chat));
     }

@@ -45,6 +45,27 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping(value = "/custom-order/address")
+    public ResponseEntity<Long> updateCustomOrderAddress(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long OrderId,
+            @RequestBody AddressRequest addressRequest) {
+        Long userId = extractUserId(userDetails);
+        orderService.updateCustomOrderAddress(OrderId, addressRequest);
+        return ResponseEntity.ok(OrderId);
+    }
+
+    @PostMapping(value = "/custom-order/payment")
+    public ResponseEntity<Long> updateCustomOrderPayment(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long OrderId,
+            @RequestParam PaymentMethod paymentMethod) {
+        Long userId = extractUserId(userDetails);
+        orderService.updateCustomOrderPayment(OrderId, paymentMethod);
+        return ResponseEntity.ok(OrderId);
+    }
+
+
     @PostMapping("/cancel/{orderId}")
     public ResponseEntity<MessageResponse> cancelOrder(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -117,11 +138,11 @@ public class OrderController {
     @PutMapping("/pending-order/payment")
     public ResponseEntity<Long> updatePendingOrderPayment(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long pendingOrderId,
+            @RequestParam Long OrderId,
             @RequestParam PaymentMethod paymentMethod) {
         Long userId = extractUserId(userDetails);
-        orderService.updatePendingOrderPayment(userId, pendingOrderId, paymentMethod);
-        return ResponseEntity.ok(pendingOrderId);
+        orderService.updatePendingOrderPayment(userId, OrderId, paymentMethod);
+        return ResponseEntity.ok(OrderId);
     }
 
     @PostMapping("/pending-order/review")
@@ -174,11 +195,11 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<List<OrderResponse>> getOrderbyId(
+    public ResponseEntity<List<OrderResponseById>> getOrderbyId(
             @PathVariable Long orderId,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
-        List<OrderResponse> response = orderService.getOrderById(userId, orderId);
+        List<OrderResponseById>response = orderService.getOrderById(userId,orderId);
         return ResponseEntity.ok(response);
     }
 

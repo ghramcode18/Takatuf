@@ -7,7 +7,7 @@ import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Repository.ChatRepository;
 import geekcode.takatuf.Repository.MessageRepository;
 import geekcode.takatuf.Repository.UserRepository;
-import geekcode.takatuf.dto.ChatResponse;
+import geekcode.takatuf.dto.chat.ChatResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
