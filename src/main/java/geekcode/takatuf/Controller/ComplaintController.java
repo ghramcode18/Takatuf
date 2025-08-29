@@ -89,4 +89,17 @@ public class ComplaintController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ComplaintResponse> cancelComplaint(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("id") Long complaintId) {
+
+        Long userId = userRepository.findByEmail(userDetails.getUsername())
+                .map(User::getId)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        ComplaintResponse resp = complaintService.cancelComplaint(userId, complaintId);
+        return ResponseEntity.ok(resp);
+    }
+
 }

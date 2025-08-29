@@ -355,9 +355,8 @@ public class OrderService {
                 List<Order> matchingOrders = orderRepository.findByOrderType(OrderType.CUSTOM).stream()
                                 .filter(order -> order.getCategory() != null
                                                 && categoryIds.contains(order.getCategory().getId())
-                                                && order.getStatus() != OrderStatus.ACCEPTED
-                                                && !customOrderOfferRepository.existsByOrderIdAndSellerId(order.getId(),
-                                                                sellerId))
+                                                && order.getStatus() != OrderStatus.ACCEPTED)
+                                              
                                 .toList();
 
                 return matchingOrders.stream().map(this::mapToOrderResponse).toList();

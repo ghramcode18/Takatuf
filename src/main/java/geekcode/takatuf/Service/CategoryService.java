@@ -3,6 +3,7 @@ package geekcode.takatuf.Service;
 import geekcode.takatuf.Entity.Category;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Repository.CategoryRepository;
+import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.category.CategoryDto.*;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-
+import geekcode.takatuf.Enums.UserType;
+import geekcode.takatuf.Entity.User;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
@@ -25,7 +29,7 @@ import java.util.UUID;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
-
+    private final UserRepository userRepository;
     private final String uploadDir = "uploads/categories/";
 
     public CategoryResponse createCategory(CategoryRequest request) {
@@ -77,9 +81,11 @@ public class CategoryService {
     }
 
     public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .toList();
+        List<Category> categories = isSeller()
+                ? categoryRepository.findAll()
+                : categoryRepository.findCustomerVisible(null, Pageable.unpaged()).getContent();
+
+        return categories.stream().map(this::mapToResponse).toList();
     }
 
     public PaginatedResponse<CategoryResponse> getCategoriesPaginated(
@@ -89,15 +95,16 @@ public class CategoryService {
             String sort,
             String sortDir) {
 
-        Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
+        Sort.Direction direction = sortDir != null && sortDir.equalsIgnoreCase("DESC")
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+        String sortField = (sort == null || sort.isBlank()) ? "name" : sort;
 
-        Page<Category> pageResult;
-        if (q != null && !q.trim().isEmpty()) {
-            pageResult = categoryRepository.findByNameContainingIgnoreCase(q, pageable);
-        } else {
-            pageResult = categoryRepository.findAll(pageable);
-        }
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sortField));
+
+        Page<Category> pageResult = isSeller()
+                ? categoryRepository.findAllByNameLike(q, pageable) // البائع يرى كل الفئات
+                : categoryRepository.findCustomerVisible(q, pageable); // المشتري يرى فقط الفئات غير الفارغة
 
         List<CategoryResponse> data = pageResult.getContent()
                 .stream()
@@ -174,5 +181,16 @@ public class CategoryService {
             Files.deleteIfExists(path);
         } catch (IOException e) {
         }
+    }
+
+    private boolean isSeller() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null)
+            return false;
+
+        String email = auth.getName();
+        return userRepository.findByEmail(email)
+                .map(u -> u.getType() == UserType.SELLER)
+                .orElse(false);
     }
 }
