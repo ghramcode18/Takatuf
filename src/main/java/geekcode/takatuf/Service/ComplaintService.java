@@ -16,6 +16,7 @@ import geekcode.takatuf.Enums.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -159,4 +160,33 @@ public class ComplaintService {
                                 .build();
         }
 
+
+@Transactional
+public ComplaintResponse cancelComplaint(Long userId, Long complaintId) {
+    Complaint complaint = complaintRepository.findById(complaintId)
+            .orElseThrow(() -> new BadRequestException("Complaint not found"));
+
+    User requester = userRepository.findById(userId)
+            .orElseThrow(() -> new BadRequestException("User not found"));
+
+    boolean isOwner = complaint.getSubmittedBy() != null
+            && complaint.getSubmittedBy().getId().equals(requester.getId());
+    boolean isAdmin = requester.getType() == UserType.ADMIN;
+
+    if (!isOwner && !isAdmin) {
+        throw new UnauthorizedException("You are not authorized to cancel this complaint");
+    }
+
+    if (complaint.getStatus() != ComplaintStatus.PENDING) {
+        throw new BadRequestException("Only pending complaints can be cancelled");
+    }
+
+    complaint.setStatus(ComplaintStatus.CANCELLED);
+    complaint.setDecision(null);
+    complaint.setReviewedBy(null);
+    complaint.setReviewedAt(null);
+
+    Complaint saved = complaintRepository.save(complaint);
+    return mapToResponse(saved);
+}
 }

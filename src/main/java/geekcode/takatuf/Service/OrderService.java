@@ -201,14 +201,10 @@ public class OrderService {
                         throw new RuntimeException("Order already finalized");
 
                 if (request.isAccept()) {
-                        if (order.getBuyerProposedPrice().compareTo(offer.getProposedPrice()) != 0) {
-                                order.setBuyerProposedPrice(offer.getProposedPrice());
-                        }
-
                         order.setStatus(OrderStatus.ACCEPTED);
                         order.setTrackingInfo(TrackingInfo.ACCEPTED_BY_BUYER);
                         order.setProposedPrice(offer.getProposedPrice());
-                        offer.setStatus(OfferStatus.ACTIVE);
+                        offer.setStatus(OfferStatus.ACCEPTED);
 
                         // Reject all other offers for the same order
                         List<CustomOrderOffer> otherOffers = customOrderOfferRepository.findByOrderId(order.getId());
@@ -272,6 +268,7 @@ public class OrderService {
                                 .proposedPrice(order.getProposedPrice())
                                 .categoryId(order.getCategory() != null ? order.getCategory().getId() : null)
                                 .categoryName(order.getCategory() != null ? order.getCategory().getName() : null)
+                                .buyerId(buyer.getId())
                                 .buyerName(buyer.getName())
                                 .buyerImageUrl(buyer.getProfileImageUrl())
                                 .build();
@@ -358,9 +355,8 @@ public class OrderService {
                 List<Order> matchingOrders = orderRepository.findByOrderType(OrderType.CUSTOM).stream()
                                 .filter(order -> order.getCategory() != null
                                                 && categoryIds.contains(order.getCategory().getId())
-                                                && order.getStatus() != OrderStatus.ACCEPTED 
-                                                && !customOrderOfferRepository.existsByOrderIdAndSellerId(order.getId(),
-                                                                sellerId))
+                                                && order.getStatus() != OrderStatus.ACCEPTED)
+                                              
                                 .toList();
 
                 return matchingOrders.stream().map(this::mapToOrderResponse).toList();
@@ -701,30 +697,41 @@ public class OrderService {
                                 .toList();
         }
 
-        public Long updateCustomOrderAddress(Long orderId, AddressRequest addressRequest) {
-                Order Order = orderRepository.findById(orderId)
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Pending order not found : " + orderId));
+        @Transactional
+        public OrderResponse sellerUpdateOrderStatus(Long orderId, UpdateOrderStatusRequest req) {
 
-                Order.setRegion(addressRequest.getRegion());
-                Order.setStreetName(addressRequest.getStreetName());
-                Order.setBuildingNumber(addressRequest.getBuildingNumber());
-                Order.setPhoneNumber(addressRequest.getPhoneNumber());
-                Order.setUpdatedAt(LocalDateTime.now());
-                orderRepository.save(Order);
-                return Order.getId();
-        }
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                String email = auth.getName();
 
-        public Long updateCustomOrderPayment(Long orderId, PaymentMethod paymentMethod) {
+                User seller = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
+
+                if (seller.getType() != UserType.SELLER) {
+                        throw new UnauthorizedException("Only sellers can update order status");
+                }
+
                 Order order = orderRepository.findById(orderId)
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Pending order not found : " + orderId));
+                                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+                if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.REJECTED) {
+                        throw new BadRequestException("Finalized orders cannot be updated");
+                }
 
-                order.setPaymentMethod(paymentMethod);
+                if (req.getStatus() != null) {
+                        order.setStatus(req.getStatus());
+                        var items = orderItemRepository.findByOrder_Id(order.getId());
+                        for (OrderItem it : items)
+                                it.setStatus(req.getStatus());
+                        orderItemRepository.saveAll(items);
+                }
+
+                if (req.getTrackingInfo() != null) {
+                        order.setTrackingInfo(req.getTrackingInfo());
+                }
+
                 order.setUpdatedAt(LocalDateTime.now());
-
                 orderRepository.save(order);
-                return order.getId();
+
+                return mapToOrderResponse(order);
         }
 
 }

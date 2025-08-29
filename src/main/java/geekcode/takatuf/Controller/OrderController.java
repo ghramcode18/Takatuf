@@ -2,7 +2,6 @@ package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Entity.Order;
 import geekcode.takatuf.Entity.User;
-import geekcode.takatuf.Enums.OrderType;
 import geekcode.takatuf.Enums.PaymentMethod;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.OrderService;
@@ -13,6 +12,7 @@ import geekcode.takatuf.dto.order.OfferDto.SubmitOfferRequest;
 import geekcode.takatuf.dto.MessageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -45,25 +45,25 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(value = "/custom-order/address")
-    public ResponseEntity<Long> updateCustomOrderAddress(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long OrderId,
-            @RequestBody AddressRequest addressRequest) {
-        Long userId = extractUserId(userDetails);
-        orderService.updateCustomOrderAddress(OrderId, addressRequest);
-        return ResponseEntity.ok(OrderId);
-    }
+    // @PostMapping(value = "/custom-order/address")
+    // public ResponseEntity<Long> updateCustomOrderAddress(
+    //         @AuthenticationPrincipal UserDetails userDetails,
+    //         @RequestParam Long OrderId,
+    //         @RequestBody AddressRequest addressRequest) {
+    //     Long userId = extractUserId(userDetails);
+    //     orderService.updateCustomOrderAddress(OrderId, addressRequest);
+    //     return ResponseEntity.ok(OrderId);
+    // }
 
-    @PostMapping(value = "/custom-order/payment")
-    public ResponseEntity<Long> updateCustomOrderPayment(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long OrderId,
-            @RequestParam PaymentMethod paymentMethod) {
-        Long userId = extractUserId(userDetails);
-        orderService.updateCustomOrderPayment(OrderId, paymentMethod);
-        return ResponseEntity.ok(OrderId);
-    }
+    // @PostMapping(value = "/custom-order/payment")
+    // public ResponseEntity<Long> updateCustomOrderPayment(
+    //         @AuthenticationPrincipal UserDetails userDetails,
+    //         @RequestParam Long OrderId,
+    //         @RequestParam PaymentMethod paymentMethod) {
+    //     Long userId = extractUserId(userDetails);
+    //     orderService.updateCustomOrderPayment(OrderId, paymentMethod);
+    //     return ResponseEntity.ok(OrderId);
+    // }
 
 
     @PostMapping("/cancel/{orderId}")
@@ -186,11 +186,11 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getCustomOrderById(orderId, email));
     }
 
-      @GetMapping("/getMyOrder")
+    @GetMapping("/getMyOrder")
     public ResponseEntity<List<OrderResponse>> getMyOrder(
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
-         List<OrderResponse> response= orderService.getMyOrder(userId);
+        List<OrderResponse> response = orderService.getMyOrder(userId);
         return ResponseEntity.ok(response);
     }
 
@@ -202,5 +202,14 @@ public class OrderController {
         List<OrderResponseById>response = orderService.getOrderById(userId,orderId);
         return ResponseEntity.ok(response);
     }
-}
 
+    @PreAuthorize("hasAuthority('SELLER') or hasRole('SELLER')")
+    @PostMapping("/seller/{orderId}/status")
+    public ResponseEntity<OrderResponse> sellerUpdateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestBody UpdateOrderStatusRequest body) {
+        OrderResponse response = orderService.sellerUpdateOrderStatus(orderId, body);
+        return ResponseEntity.ok(response);
+    }
+
+}

@@ -4,6 +4,7 @@ import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.ComplaintService;
 import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.complaint.ComplaintDto.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import geekcode.takatuf.Entity.*;
 import org.springframework.http.HttpStatus;
@@ -35,7 +36,7 @@ public class ComplaintController {
     @PostMapping("/submit")
     public ResponseEntity<ComplaintResponse> submitComplaint(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody ComplaintRequest request) {
+             @Valid @RequestBody ComplaintRequest request) {
 
         User user = getAuthenticatedUser(userDetails);
         ComplaintResponse response = complaintService.submitComplaint(user.getId(), request);
@@ -87,6 +88,19 @@ public class ComplaintController {
                 user.getId(), userType, page, perPage, q, sort, sortDir);
 
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ComplaintResponse> cancelComplaint(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("id") Long complaintId) {
+
+        Long userId = userRepository.findByEmail(userDetails.getUsername())
+                .map(User::getId)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        ComplaintResponse resp = complaintService.cancelComplaint(userId, complaintId);
+        return ResponseEntity.ok(resp);
     }
 
 }

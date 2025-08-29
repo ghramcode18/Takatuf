@@ -32,4 +32,6 @@ public class SectionItem {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @Column(name = "sort_order")
+    private Integer sortOrder;
 }
