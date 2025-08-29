@@ -4,6 +4,7 @@ import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.ComplaintService;
 import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.complaint.ComplaintDto.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import geekcode.takatuf.Entity.*;
 import org.springframework.http.HttpStatus;
@@ -35,7 +36,7 @@ public class ComplaintController {
     @PostMapping("/submit")
     public ResponseEntity<ComplaintResponse> submitComplaint(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody ComplaintRequest request) {
+             @Valid @RequestBody ComplaintRequest request) {
 
         User user = getAuthenticatedUser(userDetails);
         ComplaintResponse response = complaintService.submitComplaint(user.getId(), request);
