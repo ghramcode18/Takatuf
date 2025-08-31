@@ -95,16 +95,16 @@ public class CategoryService {
             String sort,
             String sortDir) {
 
-        Sort.Direction direction = sortDir != null && sortDir.equalsIgnoreCase("DESC")
+        if (q != null) {
+            q = q.trim();
+        }
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("DESC")
                 ? Sort.Direction.DESC
                 : Sort.Direction.ASC;
-        String sortField = (sort == null || sort.isBlank()) ? "name" : sort;
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sortField));
-
-        Page<Category> pageResult = isSeller()
-                ? categoryRepository.findAllByNameLike(q, pageable) // البائع يرى كل الفئات
-                : categoryRepository.findCustomerVisible(q, pageable); // المشتري يرى فقط الفئات غير الفارغة
+        Page<Category> pageResult = categoryRepository.findAllByNameLike(q, pageable);
 
         List<CategoryResponse> data = pageResult.getContent()
                 .stream()

@@ -25,6 +25,14 @@ public class ProductController {
     private final ProductService productService;
     private final UserRepository userRepository;
 
+    // helper لاستخراج viewerId (إن وُجد)
+    private Long resolveViewerId(UserDetails userDetails) {
+        if (userDetails == null) return null;
+        return userRepository.findByEmail(userDetails.getUsername())
+                .map(User::getId)
+                .orElse(null);
+    }
+
     @PostMapping("/add/{storeId}")
     public ResponseEntity<ProductResponse> addProduct(
             @PathVariable Long storeId,
@@ -37,19 +45,11 @@ public class ProductController {
             @RequestParam MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null)
-            return ResponseEntity.status(401).build();
+        if (userDetails == null) return ResponseEntity.status(401).build();
 
         ProductResponse response = productService.addProduct(
-                storeId,
-                name,
-                description,
-                price,
-                groupDiscountPercentage,
-                categoryId,
-                quantity,
-                image,
-                userDetails.getUsername());
+                storeId, name, description, price, groupDiscountPercentage,
+                categoryId, quantity, image, userDetails.getUsername());
 
         return ResponseEntity.ok(response);
     }
@@ -66,19 +66,11 @@ public class ProductController {
             @RequestParam(required = false) MultipartFile image,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null)
-            return ResponseEntity.status(401).build();
+        if (userDetails == null) return ResponseEntity.status(401).build();
 
         ProductResponse response = productService.updateProduct(
-                productId,
-                name,
-                description,
-                price,
-                groupDiscountPercentage,
-                categoryId,
-                quantity,
-                image,
-                userDetails.getUsername());
+                productId, name, description, price, groupDiscountPercentage,
+                categoryId, quantity, image, userDetails.getUsername());
 
         return ResponseEntity.ok(response);
     }
@@ -88,13 +80,7 @@ public class ProductController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long viewerId = null;
-        if (userDetails != null) {
-            viewerId = userRepository.findByEmail(userDetails.getUsername())
-                    .map(User::getId)
-                    .orElse(null);
-        }
-
+        Long viewerId = resolveViewerId(userDetails);
         return ResponseEntity.ok(productService.getProductByIdForViewer(id, viewerId));
     }
 
@@ -105,9 +91,13 @@ public class ProductController {
             @RequestParam(name = "per_page", defaultValue = "10") int perPage,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "ASC") String sortDir) {
+            @RequestParam(defaultValue = "ASC") String sortDir,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        return ResponseEntity.ok(productService.getProductsByStoreId(storeId, page, perPage, q, sort, sortDir));
+        Long viewerId = resolveViewerId(userDetails);
+        return ResponseEntity.ok(
+                productService.getProductsByStoreId(storeId, page, perPage, q, sort, sortDir, viewerId)
+        );
     }
 
     @DeleteMapping("/delete/{id}")
@@ -115,26 +105,38 @@ public class ProductController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null)
-            return ResponseEntity.status(401).build();
+        if (userDetails == null) return ResponseEntity.status(401).build();
 
         productService.deleteProduct(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/store/{storeId}/all-products")
-    public ResponseEntity<List<ProductResponse>> getAllStoreProducts(@PathVariable Long storeId) {
-        return ResponseEntity.ok(productService.getAllProductsByStoreId(storeId));
+    public ResponseEntity<List<ProductResponse>> getAllStoreProducts(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long viewerId = resolveViewerId(userDetails);
+        return ResponseEntity.ok(productService.getAllProductsByStoreId(storeId, viewerId));
     }
 
     @GetMapping("/category/{categoryId}/products")
-    public ResponseEntity<List<ProductResponse>> getProductsByCategoryId(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(productService.getProductsByCategoryId(categoryId));
+    public ResponseEntity<List<ProductResponse>> getProductsByCategoryId(
+            @PathVariable Long categoryId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long viewerId = resolveViewerId(userDetails);
+        return ResponseEntity.ok(productService.getProductsByCategoryId(categoryId, viewerId));
     }
 
     @PostMapping("/search")
-    public ResponseEntity<List<ProductResponse>> searchProducts(@RequestBody ProductSearchRequest request) {
-        List<ProductResponse> results = productService.searchProducts(request.getSearch(), request.getIds());
+    public ResponseEntity<List<ProductResponse>> searchProducts(
+            @RequestBody ProductSearchRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long viewerId = resolveViewerId(userDetails);
+        List<ProductResponse> results =
+                productService.searchProducts(request.getSearch(), request.getIds(), viewerId);
         return ResponseEntity.ok(results);
     }
 }

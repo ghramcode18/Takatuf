@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class HomeService {
@@ -24,24 +23,11 @@ public class HomeService {
                         Comparator.nullsLast(Integer::compareTo)))
                 .toList();
 
-        Map<String, List<SectionResponse>> grouped = sections.stream()
-                .collect(Collectors.groupingBy(s -> s.getType().toUpperCase()));
-
-        List<Map<String, Object>> resultSections = grouped.entrySet().stream()
-                .map(e -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("type", e.getKey());
-                    m.put("data", e.getValue());
-                    return m;
-                })
-                .toList();
-
         List<SliderResponse> sliders = sliderService.getAllSliders();
 
         return HomeResponse.builder()
                 .sliders(sliders)
-                .sections(resultSections)
+                .sections(sections) 
                 .build();
     }
-
 }
