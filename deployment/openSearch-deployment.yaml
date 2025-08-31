@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opensearch
+  namespace: takatuf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opensearch
+  template:
+    metadata:
+      labels:
+        app: opensearch
+    spec:
+      containers:
+        - name: opensearch
+          image: opensearchproject/opensearch:2.11.1
+          ports:
+            - containerPort: 9200
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+              value: StrongPass#2025   # غيّريها لباسوورد قوي
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/opensearch/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: os-data
+

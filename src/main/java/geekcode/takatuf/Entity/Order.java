@@ -29,6 +29,8 @@ public class Order {
     private String customizationDetails;
 
 
+    private String firstname;
+    private String lastname;
     private String region;
     private String streetName;
     private String buildingNumber;
@@ -62,6 +64,11 @@ public class Order {
     @JoinColumn(name = "buyer_id")
     @JsonIgnore
     private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "saller_id")
+    @JsonIgnore
+    private User saller;
 
     @ManyToOne
     @JoinColumn(name = "store_id")

@@ -260,6 +260,7 @@ public class OrderService {
                                 .orderType(order.getOrderType())
                                 .createdAt(order.getCreatedAt())
                                 .updatedAt(order.getUpdatedAt())
+                                .paymentMethod(order.getPaymentMethod())
                                 .items(items != null ? items.stream().map(this::mapToOrderItemDto)
                                                 .collect(Collectors.toList()) : Collections.emptyList())
                                 .customizationDetails(order.getCustomizationDetails())
@@ -671,16 +672,21 @@ public class OrderService {
 
         public List<OrderResponse> getMyOrder(Long userId) {
                 User user = userRepository.findById(userId)
-                                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-                List<Order> myOrders = orderRepository.findByUserId(userId);
+                List<Order> orders;
 
-                return myOrders.stream()
-                                .map(order -> {
-                                        List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
-                                        return mapToOrderResponse(order, items);
-                                })
-                                .toList();
+                if(user.getType().equals(UserType.SELLER)) {
+                        orders = orderRepository.findBySallerIdWithItems(userId);
+                } else if(user.getType().equals(UserType.BUYER)) {
+                        orders = orderRepository.findByUserIdWithItems(userId);
+                } else {
+                        throw new RuntimeException("Invalid user type");
+                }
+
+                return orders.stream()
+                        .map(order -> mapToOrderResponse(order))
+                        .toList();
         }
 
         public List<OrderResponseById> getOrderById(Long userId, Long orderId) {
