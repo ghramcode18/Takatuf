@@ -1,9 +1,11 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.dto.MessageResponse;
+import geekcode.takatuf.Entity.*;
 import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
+import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.StoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.List;
 public class StoreController {
 
     private final StoreService storeService;
+    private final UserRepository userRepository;
 
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StoreResponse> createStore(
@@ -122,4 +125,20 @@ public class StoreController {
         return ResponseEntity.ok(stores);
     }
 
+    private Long resolveViewerId(UserDetails userDetails) {
+        if (userDetails == null)
+            return null;
+        return userRepository.findByEmail(userDetails.getUsername())
+                .map(User::getId)
+                .orElse(null);
+    }
+
+    @GetMapping("/owner/{sellerId}/stores")
+    public ResponseEntity<List<StoreResponse>> getStoresBySeller(
+            @PathVariable Long sellerId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long viewerId = resolveViewerId(userDetails);
+        return ResponseEntity.ok(storeService.getStoresByOwnerId(sellerId, viewerId));
+    }
 }

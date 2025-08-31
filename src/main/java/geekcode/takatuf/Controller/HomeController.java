@@ -13,7 +13,7 @@ public class HomeController {
 
     private final HomeService homeService;
 
-    @GetMapping("/get")
+    @GetMapping("/g")
     public ResponseEntity<HomeResponse> getHome() {
         HomeResponse response = homeService.getHomeData();
         return ResponseEntity.ok(response);

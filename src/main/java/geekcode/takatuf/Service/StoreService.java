@@ -164,6 +164,13 @@ public class StoreService {
         return new PaginatedResponse<>(responses, storesPage.getTotalElements(), page, perPage);
     }
 
+
+    public List<StoreResponse> getStoresByOwnerId(Long ownerId, Long viewerId) {
+    List<Store> stores = storeRepository.findByOwner_Id(ownerId);
+    return stores.stream()
+            .map(s -> mapToResponse(s, viewerId))
+            .toList();
+}
     private StoreResponse mapToResponse(Store store, Long viewerId) {
         List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());
         double averageRating = reviews.stream()

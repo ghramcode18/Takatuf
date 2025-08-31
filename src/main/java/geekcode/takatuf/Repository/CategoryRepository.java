@@ -8,21 +8,28 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-  boolean existsByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCase(String name);
 
-  Page<Category> findByNameContainingIgnoreCase(String name, Pageable pageable);
+    Page<Category> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
-  @Query("""
-          select c from Category c
-          where (:q is null or trim(:q) = '' or lower(c.name) like lower(concat('%', :q, '%')))
-      """)
-  Page<Category> findAllByNameLike(@Param("q") String q, Pageable pageable);
+    // للبائع: كل الفئات (مع البحث الاختياري)
+    @Query("""
+        select c from Category c
+        where (coalesce(:q, '') = '' or lower(c.name) like concat('%', lower(:q), '%'))
+    """)
+    Page<Category> findAllByNameLike(@Param("q") String q, Pageable pageable);
 
-  @Query("""
-          select c from Category c
-          where (c.active = true or c.active is null)
-            and (:q is null or trim(:q) = '' or lower(c.name) like lower(concat('%', :q, '%')))
-            and exists (select 1 from Product p where p.category.id = c.id)
-      """)
-  Page<Category> findCustomerVisible(@Param("q") String q, Pageable pageable);
+    // للمشتري: الفئات المفعلة (أو null نعتبرها مفعلة)
+    // + لازم يكون في منتج واحد على الأقل مربوط بالفئة
+    @Query("""
+        select c from Category c
+        where (c.active = true or c.active is null)
+          and (coalesce(:q, '') = '' or lower(c.name) like concat('%', lower(:q), '%'))
+          and exists (
+              select 1 from Product p
+              where p.category.id = c.id
+                and coalesce(p.quantity, 0) > 0
+          )
+    """)
+    Page<Category> findCustomerVisible(@Param("q") String q, Pageable pageable);
 }

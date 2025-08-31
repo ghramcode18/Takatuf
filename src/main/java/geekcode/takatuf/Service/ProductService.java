@@ -115,44 +115,38 @@ public class ProductService {
         return buildProductResponse(product, viewerId);
     }
 
-    public PaginatedResponse<ProductResponse> getProductsByStoreId(Long storeId, int page, int perPage,
-            String q, String sort, String sortDir) {
+    public PaginatedResponse<ProductResponse> getProductsByStoreId(
+            Long storeId, int page, int perPage, String q, String sort, String sortDir, Long viewerId) {
 
         storeRepository.findById(storeId)
                 .orElseThrow(() -> new BadRequestException("Store not found"));
 
-        try {
-            Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-            Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
+        Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-            Page<Product> products = (q != null && !q.trim().isEmpty())
-                    ? productRepository.findByStoreIdAndNameContainingIgnoreCase(storeId, q, pageable)
-                    : productRepository.findByStoreId(storeId, pageable);
+        Page<Product> products = (q != null && !q.trim().isEmpty())
+                ? productRepository.findByStoreIdAndNameContainingIgnoreCase(storeId, q, pageable)
+                : productRepository.findByStoreId(storeId, pageable);
 
-            List<ProductResponse> data = products.map(this::buildProductResponse).getContent();
+        List<ProductResponse> data = products.getContent().stream()
+                .map(p -> buildProductResponse(p, viewerId))
+                .toList();
 
-            return new PaginatedResponse<>(data, products.getTotalElements(), page, perPage);
-
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid sort field: " + sort);
-        }
+        return new PaginatedResponse<>(data, products.getTotalElements(), page, perPage);
     }
 
-    public List<ProductResponse> getAllProductsByStoreId(Long storeId) {
+    public List<ProductResponse> getAllProductsByStoreId(Long storeId, Long viewerId) {
         storeRepository.findById(storeId)
                 .orElseThrow(() -> new BadRequestException("Store not found"));
 
-        List<Product> products = productRepository.findByStoreId(storeId);
-
-        return products.stream()
-                .map(this::buildProductResponse)
+        return productRepository.findByStoreId(storeId).stream()
+                .map(p -> buildProductResponse(p, viewerId))
                 .toList();
     }
 
-    public List<ProductResponse> getProductsByCategoryId(Long categoryId) {
-        List<Product> products = productRepository.findByCategoryId(categoryId);
-        return products.stream()
-                .map(this::buildProductResponse)
+    public List<ProductResponse> getProductsByCategoryId(Long categoryId, Long viewerId) {
+        return productRepository.findByCategoryId(categoryId).stream()
+                .map(p -> buildProductResponse(p, viewerId))
                 .toList();
     }
 
@@ -171,9 +165,8 @@ public class ProductService {
         }
     }
 
-    public List<ProductResponse> searchProducts(String search, List<Long> ids) {
+    public List<ProductResponse> searchProducts(String search, List<Long> ids, Long viewerId) {
         List<Product> products;
-
         boolean hasSearch = search != null && !search.trim().isEmpty();
         boolean hasIds = ids != null && !ids.isEmpty();
 
@@ -187,15 +180,12 @@ public class ProductService {
             return List.of();
         }
 
-        return products.stream()
-                .map(this::buildProductResponse)
-                .toList();
+        return products.stream().map(p -> buildProductResponse(p, viewerId)).toList();
     }
 
     private ProductResponse buildProductResponse(Product product, Long viewerId) {
         Store store = product.getStore();
         User owner = store.getOwner();
-        String sellerImage = owner.getProfileImageUrl();
 
         List<ProductReview> reviews = product.getProductReviews();
         double avgRating = (reviews == null || reviews.isEmpty())
@@ -206,10 +196,8 @@ public class ProductService {
                         .average()
                         .orElse(0.0);
 
-        Boolean favorited = null;
-        if (viewerId != null) {
-            favorited = favoriteRepository.existsByUserIdAndProduct_Id(viewerId, product.getId());
-        }
+        boolean isFav = viewerId != null
+                && favoriteRepository.existsByUserIdAndProduct_Id(viewerId, product.getId());
 
         return ProductResponse.builder()
                 .id(product.getId())
@@ -228,9 +216,9 @@ public class ProductService {
                 .storeImage(store.getImageUrl())
                 .sellerId(owner.getId())
                 .sellerName(owner.getName())
-                .sellerImage(sellerImage)
+                .sellerImage(owner.getProfileImageUrl())
                 .averageRating(avgRating)
-                .favorited(favorited)
+                .favorited(isFav)
                 .build();
     }
 

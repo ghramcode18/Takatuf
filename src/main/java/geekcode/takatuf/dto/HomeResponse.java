@@ -14,5 +14,5 @@ import java.util.Map;
 @Builder
 public class HomeResponse {
     private List<SliderResponse> sliders;
-    private List<Map<String, Object>> sections;
+    private List<SectionResponse> sections;
 }

@@ -1,76 +1,71 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Service.PromotionService;
-import geekcode.takatuf.dto.promotion.PromotionRequest;
-import geekcode.takatuf.dto.promotion.PromotionResponse;
+import geekcode.takatuf.dto.PromotionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/promotions")
 @RequiredArgsConstructor
 public class PromotionController {
-
     private final PromotionService promotionService;
 
-    @PostMapping(value = "/add", consumes = "multipart/form-data")
-    public ResponseEntity<PromotionResponse> createPromotion(
+    @PostMapping("/request")
+    public ResponseEntity<PromotionResponse> requestPromotion(
             @AuthenticationPrincipal UserDetails userDetails,
-            @ModelAttribute PromotionRequest request) {
-
+            @RequestParam Long productId,
+            @RequestParam Integer durationDays) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
 
-        PromotionResponse response = promotionService.createPromotion(request);
-        return ResponseEntity.ok(response);
+        PromotionResponse promotion = promotionService.createRequest(
+                userDetails.getUsername(),
+                productId,
+                durationDays);
+
+        return ResponseEntity.ok(promotion);
     }
 
-    @PostMapping(value = "/update/{id}", consumes = "multipart/form-data")
-    public ResponseEntity<PromotionResponse> updatePromotion(
+    @GetMapping("/my")
+    public ResponseEntity<?> myRequests(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(name = "per_page", defaultValue = "10") int perPage) {
+        if (userDetails == null)
+            return ResponseEntity.status(401).build();
+
+        return ResponseEntity.ok(
+                promotionService.getSellerRequests(userDetails.getUsername(), page, perPage));
+    }
+
+    @GetMapping("/admin/pending")
+    public ResponseEntity<?> pendingForAdmin(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(name = "per_page", defaultValue = "10") int perPage) {
+        return ResponseEntity.ok(promotionService.getPendingForAdmin(page, perPage));
+    }
+
+    @PostMapping("/admin/review/{id}")
+    public ResponseEntity<Void> review(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
-            @ModelAttribute PromotionRequest request) {
-
-        if (userDetails == null) {
+            @RequestParam boolean approve,
+            @RequestParam(required = false) String startAt) {
+        if (userDetails == null)
             return ResponseEntity.status(401).build();
-        }
 
-        PromotionResponse response = promotionService.updatePromotion(id, request);
-        return ResponseEntity.ok(response);
-    }
+        LocalDateTime start = (startAt != null && !startAt.isBlank())
+                ? LocalDateTime.parse(startAt)
+                : null;
 
-    @GetMapping("/all")
-    public ResponseEntity<List<PromotionResponse>> getAllPromotions() {
-        return ResponseEntity.ok(promotionService.getAllPromotions());
-    }
-
-    @GetMapping("/filter")
-    public ResponseEntity<List<PromotionResponse>> getPromotionsByActive(
-            @RequestParam(required = false) Boolean active) {
-        return ResponseEntity.ok(promotionService.getPromotionsByActiveStatus(active));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<PromotionResponse> getPromotionById(@PathVariable Long id) {
-        return ResponseEntity.ok(promotionService.getPromotionById(id));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePromotion(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        promotionService.deletePromotion(id);
+        promotionService.review(id, userDetails.getUsername(), approve, start);
         return ResponseEntity.noContent().build();
     }
 }

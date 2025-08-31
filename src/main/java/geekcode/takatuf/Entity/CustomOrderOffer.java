@@ -1,5 +1,6 @@
 package geekcode.takatuf.Entity;
 
+import geekcode.takatuf.Enums.OfferStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,7 +27,8 @@ public class CustomOrderOffer {
     private java.math.BigDecimal proposedPrice;
 
     @Enumerated(EnumType.STRING)
-    private geekcode.takatuf.Enums.OfferStatus status;
+    @Column(length = 50)
+    private OfferStatus status;
 
     private java.time.LocalDateTime createdAt;
     private java.time.LocalDateTime updatedAt;
