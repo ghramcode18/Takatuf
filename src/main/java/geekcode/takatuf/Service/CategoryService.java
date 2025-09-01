@@ -10,14 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import geekcode.takatuf.Enums.UserType;
-import geekcode.takatuf.Entity.User;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
@@ -32,18 +28,16 @@ public class CategoryService {
     private final UserRepository userRepository;
     private final String uploadDir = "uploads/categories/";
 
+    // ---- CRUD مختصرة بدون تغيير ----
     public CategoryResponse createCategory(CategoryRequest request) {
         validateCategoryRequest(request);
-
         String imageUrl = saveImage(request.getImage());
-
         Category category = Category.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .image(imageUrl)
                 .active(Optional.ofNullable(request.getActive()).orElse(true))
                 .build();
-
         return mapToResponse(categoryRepository.save(category));
     }
 
@@ -63,25 +57,24 @@ public class CategoryService {
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
             deleteImageIfExists(category.getImage());
-            String imageUrl = saveImage(request.getImage());
-            category.setImage(imageUrl);
+            category.setImage(saveImage(request.getImage()));
         }
 
         Optional.ofNullable(request.getActive()).ifPresent(category::setActive);
-
         return mapToResponse(categoryRepository.save(category));
     }
 
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new BadRequestException("Category not found"));
-
         deleteImageIfExists(category.getImage());
         categoryRepository.deleteById(id);
     }
 
+    // ---- هنا المنطق المطلوب ----
     public List<CategoryResponse> getAllCategories() {
-        List<Category> categories = isSeller()
+        boolean sellerOrAdmin = isSellerOrAdmin();
+        List<Category> categories = sellerOrAdmin
                 ? categoryRepository.findAll()
                 : categoryRepository.findCustomerVisible(null, Pageable.unpaged()).getContent();
 
@@ -89,25 +82,21 @@ public class CategoryService {
     }
 
     public PaginatedResponse<CategoryResponse> getCategoriesPaginated(
-            int page,
-            int perPage,
-            String q,
-            String sort,
-            String sortDir) {
+            int page, int perPage, String q, String sort, String sortDir) {
 
-        if (q != null) {
-            q = q.trim();
-        }
+        q = (q == null) ? null : q.trim();
 
         Sort.Direction direction = sortDir.equalsIgnoreCase("DESC")
                 ? Sort.Direction.DESC
                 : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
 
-        Page<Category> pageResult = categoryRepository.findAllByNameLike(q, pageable);
+        boolean sellerOrAdmin = isSellerOrAdmin();
+        Page<Category> pageResult = sellerOrAdmin
+                ? categoryRepository.findAllByNameLike(q, pageable)
+                : categoryRepository.findCustomerVisible(q, pageable);
 
-        List<CategoryResponse> data = pageResult.getContent()
-                .stream()
+        List<CategoryResponse> data = pageResult.getContent().stream()
                 .map(this::mapToResponse)
                 .toList();
 
@@ -134,38 +123,27 @@ public class CategoryService {
         if (isBlank(request.getName())) {
             throw new BadRequestException("Category name is required");
         }
-
         if (request.getImage() == null || request.getImage().isEmpty()) {
             throw new BadRequestException("Category image is required");
         }
-
-        boolean exists = categoryRepository.existsByNameIgnoreCase(request.getName());
-        if (exists) {
+        if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
             throw new BadRequestException("Category name already exists");
         }
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+    private boolean isBlank(String v) {
+        return v == null || v.trim().isEmpty();
     }
 
     private String saveImage(MultipartFile file) {
         try {
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             Path uploadPath = Paths.get(uploadDir);
-
-            if (!Files.exists(uploadPath)) {
+            if (!Files.exists(uploadPath))
                 Files.createDirectories(uploadPath);
-            }
-
-            Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
+            Files.copy(file.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
             return ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/categories/")
-                    .path(fileName)
-                    .toUriString();
-
+                    .path("/uploads/categories/").path(fileName).toUriString();
         } catch (IOException e) {
             throw new BadRequestException("Failed to save category image");
         }
@@ -174,23 +152,21 @@ public class CategoryService {
     private void deleteImageIfExists(String imageUrl) {
         if (imageUrl == null || !imageUrl.contains("/"))
             return;
-
         try {
             String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
-            Path path = Paths.get(uploadDir).resolve(fileName);
-            Files.deleteIfExists(path);
-        } catch (IOException e) {
+            Files.deleteIfExists(Paths.get(uploadDir).resolve(fileName));
+        } catch (IOException ignored) {
         }
     }
 
-    private boolean isSeller() {
+    private boolean isSellerOrAdmin() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null)
             return false;
 
         String email = auth.getName();
         return userRepository.findByEmail(email)
-                .map(u -> u.getType() == UserType.SELLER)
+                .map(u -> u.getType() == UserType.SELLER || u.getType() == UserType.ADMIN)
                 .orElse(false);
     }
 }
