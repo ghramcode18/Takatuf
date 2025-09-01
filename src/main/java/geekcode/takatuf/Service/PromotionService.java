@@ -11,12 +11,14 @@ import geekcode.takatuf.Repository.ProductPromotionRepository;
 import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.dto.PromotionResponse;
+import geekcode.takatuf.dto.product.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class PromotionService {
     private final ProductPromotionRepository promotionRepo;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final ProductService productService;
 
     private PromotionResponse toResponse(ProductPromotion promotion) {
         return PromotionResponse.builder()
@@ -65,7 +68,7 @@ public class PromotionService {
             throw new BadRequestException("Already has pending request");
         }
 
-        if (promotionRepo.existsByProduct_IdAndEndAtAfter(productId, LocalDateTime.now())) {
+        if (promotionRepo.existsActiveApproved(productId, LocalDateTime.now())) {
             throw new BadRequestException("Already promoted");
         }
 
@@ -124,7 +127,18 @@ public class PromotionService {
         promotionRepo.save(req);
     }
 
+    public List<ProductResponse> getFeaturedProducts(Integer limit, Long viewerId) {
+        int size = (limit == null || limit <= 0) ? 10 : Math.min(limit, 50);
+        var page = promotionRepo.findActiveFeaturedProducts(
+                LocalDateTime.now(),
+                PageRequest.of(0, size));
+        return page.getContent()
+                .stream()
+                .map(p -> productService.getProductByIdForViewer(p.getId(), viewerId))
+                .toList();
+    }
+
     public boolean isProductFeatured(Long productId) {
-        return !promotionRepo.findActiveByProduct(productId, LocalDateTime.now()).isEmpty();
+        return promotionRepo.existsActiveApproved(productId, LocalDateTime.now());
     }
 }
