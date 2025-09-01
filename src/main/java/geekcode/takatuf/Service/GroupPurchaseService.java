@@ -87,7 +87,8 @@ public class GroupPurchaseService {
                 sender.getName(),
                 sender.getProfileImageUrl(),
                 receiver.getName(),
-                receiver.getProfileImageUrl()
+                receiver.getProfileImageUrl(),
+                sender.getId()
         );
     }
 

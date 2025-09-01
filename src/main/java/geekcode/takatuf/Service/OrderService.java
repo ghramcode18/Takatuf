@@ -82,12 +82,14 @@ public class OrderService {
                 }
 
                 Order customOrder = Order.builder()
+
                                 .user(user)
                                 .category(category)
                                 .name(request.getName())
                                 .customizationDetails(request.getCustomizationDetails())
                                 .imageUrl(imagePath)
                                 .buyerProposedPrice(request.getBuyerProposedPrice())
+                                .proposedPrice(request.getProposedPrice())
                                 .status(OrderStatus.PLACED)
                                 .trackingInfo(TrackingInfo.PROCESSING)
                                 .orderType(OrderType.CUSTOM)
@@ -98,6 +100,7 @@ public class OrderService {
                 Order savedOrder = orderRepository.save(customOrder);
                 return mapToOrderResponse(savedOrder);
         }
+        
 
         private String saveCustomOrderImage(MultipartFile file) {
                 try {
@@ -222,6 +225,8 @@ public class OrderService {
 
                 offer.setUpdatedAt(LocalDateTime.now());
                 order.setUpdatedAt(LocalDateTime.now());
+                User user = userRepository.findById(request.getSellerId()).get();
+                order.setSeller(user);
                 customOrderOfferRepository.save(offer);
                 orderRepository.save(order);
         }
@@ -320,6 +325,7 @@ public class OrderService {
                         .productId(orderItem.getProduct().getId())
                         .productName(orderItem.getProduct().getName())
                         .quantity(orderItem.getQuantity())
+                        .sellerId(orderItem.getSellerId())
                         .price(orderItem.getPrice())
                         .build();
         }
@@ -418,6 +424,7 @@ public class OrderService {
 
                                         return PendingOrderItem.builder()
                                                         .pendingOrder(savedOrder)
+                                                        .sellerId(itemReq.getSellerId())
                                                         .product(product)
                                                         .quantity(itemReq.getQuantity())
                                                         .addedAt(LocalDateTime.now())
@@ -445,6 +452,8 @@ public class OrderService {
                                 .orElseThrow(() -> new ResourceNotFoundException("No pending order found"));
 
                 List<PendingOrderItem> items = pendingOrderItemRepository.findByPendingOrder(order);
+
+
                 BigDecimal total = BigDecimal.ZERO;
                 List<PendingOrderItemResponse> itemResponses = new ArrayList<>();
 
@@ -473,7 +482,8 @@ public class OrderService {
                                         product.getName(),
                                         currentPrice,
                                         item.getQuantity(),
-                                        item.getImage()));
+                                        item.getImage(),
+                                        item.getSellerId()));
                 }
 
                 order.setTotalPrice(total);
@@ -609,6 +619,7 @@ public class OrderService {
                                                 .order(null) // سيتم ضبطها لاحقًا
                                                 .product(product)
                                                 .quantity(item.getQuantity())
+                                                .sellerId(item.getSellerId())
                                                 .address(pendingOrder.getRegion() + "-" + pendingOrder.getStreetName()
                                                                 + "-" + pendingOrder.getBuildingNumber())
                                                 .price(price)
@@ -665,10 +676,31 @@ public class OrderService {
                                                 .productName(i.getProduct().getName())
                                                 .quantity(i.getQuantity())
                                                 .price(i.getPrice())
+                                                .sellerId(i.getSellerId())
                                                 .image(i.getProduct().getImage())
                                                 .build()).toList())
                                 .build();
         }
+
+//        public List<OrderResponse> getMyOrder(Long userId) {
+//                User user = userRepository.findById(userId)
+//                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+//
+//                List<Order> orders ;
+//
+//
+//                if(user.getType().equals(UserType.SELLER)) {
+//                        orders = orderRepository.findBySallerIdWithItems(userId);
+//                } else if(user.getType().equals(UserType.BUYER)) {
+//                        orders = orderRepository.findByUserIdWithItems(userId);
+//                } else {
+//                        throw new RuntimeException("Invalid user type");
+//                }
+//
+//                return orders.stream()
+//                        .map(order -> mapToOrderResponse(order))
+//                        .toList();
+//        }
 
         public List<OrderResponse> getMyOrder(Long userId) {
                 User user = userRepository.findById(userId)
@@ -676,16 +708,29 @@ public class OrderService {
 
                 List<Order> orders;
 
-                if(user.getType().equals(UserType.SELLER)) {
+                if (user.getType().equals(UserType.SELLER)) {
+                        // 1. جلب الطلبات بالـ SellerId
                         orders = orderRepository.findBySallerIdWithItems(userId);
-                } else if(user.getType().equals(UserType.BUYER)) {
+
+                        // 2. إذا ما لقيت طلبات، روح دور بالـ OrderItems
+                        if (orders.isEmpty()) {
+                                List<OrderItem> items = orderItemRepository.findBySellerId(userId);
+
+                                // إذا لقيت أكتر من ريكورد، رجع كل واحد لحالو
+                                orders = items.stream()
+                                        .map(OrderItem::getOrder)
+                                        .distinct() // ممكن تشيلها إذا بدك تكرر الطلب لنفس الـ Seller أكتر من مرة
+                                        .toList();
+                        }
+
+                } else if (user.getType().equals(UserType.BUYER)) {
                         orders = orderRepository.findByUserIdWithItems(userId);
                 } else {
                         throw new RuntimeException("Invalid user type");
                 }
 
                 return orders.stream()
-                        .map(order -> mapToOrderResponse(order))
+                        .map(this::mapToOrderResponse)
                         .toList();
         }
 
@@ -740,4 +785,29 @@ public class OrderService {
                 return mapToOrderResponse(order);
         }
 
+        public Long updateCustomOrderAddress(Long orderId, AddressRequest addressRequest) {
+                Order order = orderRepository.findById(orderId)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                " order not found for user: " + orderId));
+                order.setRegion(addressRequest.getRegion());
+                order.setStreetName(addressRequest.getStreetName());
+                order.setBuildingNumber(addressRequest.getBuildingNumber());
+                order.setPhoneNumber(addressRequest.getPhoneNumber());
+                order.setUpdatedAt(LocalDateTime.now());
+                order.setFirstname(addressRequest.getFirstName());
+                order.setLastname(addressRequest.getLastName());
+                orderRepository.save(order);
+                return order.getId();
+        }
+
+        public Long updateCustomOrderPayment(Long orderId, PaymentMethod paymentMethod) {
+
+                Order order = orderRepository.findById(orderId)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                " order not found for user: " + orderId));
+                order.setPaymentMethod(paymentMethod);
+                order.setUpdatedAt(LocalDateTime.now());
+                orderRepository.save(order);
+                return order.getId();
+        }
 }

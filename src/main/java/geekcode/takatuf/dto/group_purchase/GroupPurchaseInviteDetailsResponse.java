@@ -20,4 +20,5 @@ public class GroupPurchaseInviteDetailsResponse {
 
     private String receiverName;
     private String receiverPhoto;
+    private Long sellerId;
 }

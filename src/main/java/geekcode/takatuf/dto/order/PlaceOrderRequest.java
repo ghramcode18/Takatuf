@@ -46,5 +46,7 @@ public class PlaceOrderRequest {
         @NotNull
         @Positive(message = "Quantity must be greater than zero")
         private Integer quantity;
+
+        private Long sellerId;
     }
 }

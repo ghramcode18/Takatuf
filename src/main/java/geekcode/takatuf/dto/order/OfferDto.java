@@ -31,6 +31,7 @@ public static class OfferResponse {
 @Data
 public static class BuyerOfferDecisionRequest {
     private boolean accept;
+    private Long sellerId;
 }
 
 }

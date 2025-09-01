@@ -5,6 +5,8 @@ import lombok.*;
 import java.util.List;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
@@ -26,6 +28,8 @@ public class Store {
     private User owner;
 
     private String name;
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String description;
     private String status;
     private LocalDateTime createdAt;

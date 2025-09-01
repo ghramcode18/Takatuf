@@ -3,6 +3,9 @@ package geekcode.takatuf.Entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
+
 import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,7 +26,12 @@ public class Product {
     private Long id;
 
     private String name;
+
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String description;
+
     private BigDecimal price;
     private String image;
 

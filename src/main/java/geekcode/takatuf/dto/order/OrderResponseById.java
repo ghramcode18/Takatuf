@@ -62,5 +62,6 @@ public class OrderResponseById {
         private Integer quantity;
         private BigDecimal price;
         private String image;
+        private Long sellerId;
     }
 }

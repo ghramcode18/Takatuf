@@ -17,5 +17,7 @@ public class PendingOrderItemResponse {
     private BigDecimal price;
     private int quantity;
     private String image;
+    private Long selleId;
+
 
 }

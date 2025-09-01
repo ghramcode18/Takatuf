@@ -45,25 +45,25 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    // @PostMapping(value = "/custom-order/address")
-    // public ResponseEntity<Long> updateCustomOrderAddress(
-    //         @AuthenticationPrincipal UserDetails userDetails,
-    //         @RequestParam Long OrderId,
-    //         @RequestBody AddressRequest addressRequest) {
-    //     Long userId = extractUserId(userDetails);
-    //     orderService.updateCustomOrderAddress(OrderId, addressRequest);
-    //     return ResponseEntity.ok(OrderId);
-    // }
+     @PostMapping(value = "/custom-order/address")
+     public ResponseEntity<Long> updateCustomOrderAddress(
+             @AuthenticationPrincipal UserDetails userDetails,
+             @RequestParam Long OrderId,
+             @RequestBody AddressRequest addressRequest) {
+         Long userId = extractUserId(userDetails);
+         orderService.updateCustomOrderAddress(OrderId, addressRequest);
+         return ResponseEntity.ok(OrderId);
+     }
 
-    // @PostMapping(value = "/custom-order/payment")
-    // public ResponseEntity<Long> updateCustomOrderPayment(
-    //         @AuthenticationPrincipal UserDetails userDetails,
-    //         @RequestParam Long OrderId,
-    //         @RequestParam PaymentMethod paymentMethod) {
-    //     Long userId = extractUserId(userDetails);
-    //     orderService.updateCustomOrderPayment(OrderId, paymentMethod);
-    //     return ResponseEntity.ok(OrderId);
-    // }
+     @PostMapping(value = "/custom-order/payment")
+     public ResponseEntity<Long> updateCustomOrderPayment(
+             @AuthenticationPrincipal UserDetails userDetails,
+             @RequestParam Long OrderId,
+             @RequestParam PaymentMethod paymentMethod) {
+         Long userId = extractUserId(userDetails);
+         orderService.updateCustomOrderPayment(OrderId, paymentMethod);
+         return ResponseEntity.ok(OrderId);
+     }
 
 
     @PostMapping("/cancel/{orderId}")

@@ -66,9 +66,9 @@ public class Order {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "saller_id")
+    @JoinColumn(name = "seller_id")
     @JsonIgnore
-    private User saller;
+    private User seller;
 
     @ManyToOne
     @JoinColumn(name = "store_id")
