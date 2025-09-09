@@ -11,6 +11,8 @@ public class ProductRequest {
     private String description;
     private BigDecimal price;
     private MultipartFile image;
-    private String category;
-    private Integer quantity ;
+    private Long categoryId;
+    private BigDecimal groupDiscountPercentage;
+    private Integer quantity;
+
 }

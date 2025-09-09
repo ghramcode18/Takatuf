@@ -32,20 +32,53 @@ public class SecurityConfig {
         return builder.build();
     }
 
+    // @Bean
+    // public SecurityFilterChain securityFilterChain(HttpSecurity http) throws
+    // Exception {
+    // http
+    // .cors()
+    // .and()
+    // .csrf().disable()
+    // .authorizeHttpRequests()
+    // .requestMatchers(
+    // "/api/auth/**",
+    // "/ws/**",
+    // "/uploads/**"
+    // ).permitAll()
+    // .anyRequest().authenticated()
+    // .and()
+    // .sessionManagement()
+    // .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+    // .and()
+    // .addFilterBefore(jwtAuthenticationFilter,
+    // UsernamePasswordAuthenticationFilter.class);
+
+    // return http.build();
+    // }
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors()
-            .and()
-            .csrf().disable()
-            .authorizeHttpRequests()
-                .requestMatchers(new AntPathRequestMatcher("/api/auth/**")).permitAll() 
+                .cors()
+                .and()
+                .csrf().disable()
+                .authorizeHttpRequests()
+                .requestMatchers(
+                        "/api/auth/**",
+                        "/api/home/**",
+                        "/api/categories/**",
+                        "/api/product/**",
+                        "/api/store/**",
+                        "/uploads/**",
+                        "/ws/**")
+                .permitAll()
                 .anyRequest().authenticated()
-            .and()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .and()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 }

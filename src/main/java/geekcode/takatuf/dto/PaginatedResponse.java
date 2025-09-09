@@ -1,12 +1,20 @@
 package geekcode.takatuf.dto;
 
+
+import lombok.*;
+
 import java.util.List;
 
+@Data
+@Builder
+@Setter
+@Getter
 public class PaginatedResponse<T> {
     private List<T> data;
     private long total;
     private int page;
     private int perPage;
+
 
     public PaginatedResponse() {
     }

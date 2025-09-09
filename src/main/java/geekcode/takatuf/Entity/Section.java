@@ -3,6 +3,8 @@ package geekcode.takatuf.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "sections")
@@ -32,6 +34,8 @@ public class Section {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SectionItem> items = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

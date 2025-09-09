@@ -1,5 +1,6 @@
 package geekcode.takatuf.Controller;
 
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.slider.SliderRequest;
 import geekcode.takatuf.dto.slider.SliderResponse;
 import geekcode.takatuf.dto.slider.SliderSortRequest;
@@ -21,29 +22,33 @@ public class SliderController {
 
     private final SliderService sliderService;
 
-    @PostMapping("/add")
+    @PostMapping(value = "/add", consumes = "multipart/form-data")
     public ResponseEntity<SliderResponse> createSlider(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SliderRequest request) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
+            @ModelAttribute SliderRequest request) {
         SliderResponse response = sliderService.createSlider(userDetails.getUsername(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/update/{id}")
+    @PostMapping(value = "/update/{id}", consumes = "multipart/form-data")
     public ResponseEntity<SliderResponse> updateSlider(
-            @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SliderRequest request) {
-
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
+            @PathVariable Long id,
+            @ModelAttribute SliderRequest request) {
         SliderResponse response = sliderService.updateSlider(id, userDetails.getUsername(), request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/paginated")
+    public ResponseEntity<PaginatedResponse<SliderResponse>> getPaginatedSliders(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10", name = "per_page") int perPage,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "ASC", name = "sort_dir") String sortDir) {
+
+        PaginatedResponse<SliderResponse> response = sliderService.getAllSlidersPaginated(page, perPage, q, sort,
+                sortDir);
         return ResponseEntity.ok(response);
     }
 
@@ -60,18 +65,6 @@ public class SliderController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<SliderResponse>> getAllSliders(
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        List<SliderResponse> sliders = sliderService.getAllSliders();
-        return ResponseEntity.ok(sliders);
-    }
-
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteSlider(
             @PathVariable Long id,
@@ -83,6 +76,12 @@ public class SliderController {
 
         sliderService.deleteSlider(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<SliderResponse>> getAllSliders() {
+        List<SliderResponse> sliders = sliderService.getAllSliders();
+        return ResponseEntity.ok(sliders);
     }
 
     @PostMapping("/sort")

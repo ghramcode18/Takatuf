@@ -13,8 +13,10 @@ public class ProductResponse {
     private String name;
     private String description;
     private BigDecimal price;
+    private BigDecimal groupDiscountPercentage;
     private String image;
-    private String category;
+    private Long categoryId;
+    private String categoryName;
     private Integer quantity;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -25,4 +27,5 @@ public class ProductResponse {
     private String sellerName;
     private String sellerImage;
     private Double averageRating;
+    private Boolean favorited; 
 }

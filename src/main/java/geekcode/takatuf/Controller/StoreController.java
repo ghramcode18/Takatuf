@@ -1,8 +1,11 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.dto.MessageResponse;
+import geekcode.takatuf.Entity.*;
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
+import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Service.StoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ import java.util.List;
 public class StoreController {
 
     private final StoreService storeService;
+    private final UserRepository userRepository;
 
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StoreResponse> createStore(
@@ -66,14 +70,7 @@ public class StoreController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<StoreResponse> getStore(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
+    public ResponseEntity<StoreResponse> getStore(@PathVariable Long id) {
         StoreResponse response = storeService.getStoreById(id);
         return ResponseEntity.ok(response);
     }
@@ -92,27 +89,56 @@ public class StoreController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<StoreResponse>> getAllStores(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
+    public ResponseEntity<List<StoreResponse>> getAllStores() {
         List<StoreResponse> stores = storeService.getAllStores();
         return ResponseEntity.ok(stores);
     }
 
-  @GetMapping("/mystores")
-public ResponseEntity<List<StoreResponse>> getStoresByOwner(
-        @AuthenticationPrincipal UserDetails userDetails) {
+    @GetMapping("/mystores")
+    public ResponseEntity<List<StoreResponse>> getStoresByOwner(
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-    if (userDetails == null) {
-        return ResponseEntity.status(401).build();
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        List<StoreResponse> stores = storeService.getStoresByOwner(userDetails.getUsername());
+        return ResponseEntity.ok(stores);
     }
 
-    List<StoreResponse> stores = storeService.getStoresByOwner(userDetails.getUsername());
-    return ResponseEntity.ok(stores);
-}
+    @GetMapping("/mystores/pag")
+    public ResponseEntity<PaginatedResponse<StoreResponse>> getStoresByOwner(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(name = "per_page", defaultValue = "10") int perPage,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(name = "sort_dir", defaultValue = "ASC") String sortDir) {
 
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
 
+        PaginatedResponse<StoreResponse> stores = storeService.getStoresByOwnerPaginated(
+                userDetails.getUsername(), page, perPage, q, sort, sortDir);
+
+        return ResponseEntity.ok(stores);
+    }
+
+    private Long resolveViewerId(UserDetails userDetails) {
+        if (userDetails == null)
+            return null;
+        return userRepository.findByEmail(userDetails.getUsername())
+                .map(User::getId)
+                .orElse(null);
+    }
+
+    @GetMapping("/owner/{sellerId}/stores")
+    public ResponseEntity<List<StoreResponse>> getStoresBySeller(
+            @PathVariable Long sellerId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long viewerId = resolveViewerId(userDetails);
+        return ResponseEntity.ok(storeService.getStoresByOwnerId(sellerId, viewerId));
+    }
 }

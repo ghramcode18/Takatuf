@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -23,6 +26,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByUserIdAndOrderType(Long userId, OrderType orderType);
 
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.user.id = :userId")
+    List<Order> findByUserIdWithItems(@Param("userId") Long userId);
+
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.seller.id = :sellerId")
+    List<Order> findBySallerIdWithItems(@Param("sellerId") Long sellerId);
+
+
+    List<Order>  findByUserIdAndId(Long userId, Long Id );
     List<Order> findByStoreIdAndStatus(Long storeId, OrderStatus status);
 
     List<Order> findByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime start, LocalDateTime end);

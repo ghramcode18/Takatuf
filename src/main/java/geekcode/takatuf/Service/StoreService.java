@@ -1,19 +1,25 @@
 package geekcode.takatuf.Service;
 
+import geekcode.takatuf.dto.PaginatedResponse;
 import geekcode.takatuf.dto.store.StoreRequest;
 import geekcode.takatuf.dto.store.StoreResponse;
 import geekcode.takatuf.Entity.Store;
 import geekcode.takatuf.Entity.StoreReview;
 import geekcode.takatuf.Entity.User;
+import org.springframework.data.domain.*;
 import geekcode.takatuf.Exception.Types.BadRequestException;
 import geekcode.takatuf.Exception.Types.ResourceNotFoundException;
 import geekcode.takatuf.Exception.Types.UnauthorizedException;
+import geekcode.takatuf.Repository.FavoriteRepository;
+import geekcode.takatuf.Repository.ProductRepository;
 import geekcode.takatuf.Repository.StoreRepository;
 import geekcode.takatuf.Repository.UserRepository;
 import geekcode.takatuf.Repository.StoreReviewRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -28,6 +34,8 @@ public class StoreService {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final StoreReviewRepository storeReviewRepository;
+    private final ProductRepository productRepository;
+    private final FavoriteRepository favoriteRepository;
 
     public StoreResponse createStore(String username, StoreRequest request) {
         if (storeRepository.existsByName(request.getName())) {
@@ -95,7 +103,7 @@ public class StoreService {
 
         try {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/");
+            Path uploadPath = Paths.get("uploads/stores/");
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -103,36 +111,79 @@ public class StoreService {
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            return "/uploads/" + fileName;
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/stores/")
+                    .path(fileName)
+                    .toUriString();
+
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image", e);
         }
     }
 
+    public StoreResponse getStoreByIdForViewer(Long storeId, Long viewerId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+        return mapToResponse(store, viewerId);
+    }
+
     public StoreResponse getStoreById(Long storeId) {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
-        return mapToResponse(store);
+        return mapToResponse(store, null);
     }
 
-   public List<StoreResponse> getStoresByOwner(String username) {
-    User user = userRepository.findByEmail(username)
-            .orElseThrow(() -> new BadRequestException("User not found."));
+    public List<StoreResponse> getStoresByOwner(String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new BadRequestException("User not found."));
 
-    List<Store> stores = storeRepository.findByOwner_Id(user.getId());
+        List<Store> stores = storeRepository.findByOwner_Id(user.getId());
 
+        return stores.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public PaginatedResponse<StoreResponse> getStoresByOwnerPaginated(
+            String username, int page, int perPage, String q, String sort, String sortDir) {
+
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new BadRequestException("User not found."));
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), perPage, Sort.by(direction, sort));
+
+        Page<Store> storesPage = (q != null && !q.trim().isEmpty())
+                ? storeRepository.findByOwner_IdAndNameContainingIgnoreCase(user.getId(), q, pageable)
+                : storeRepository.findByOwner_Id(user.getId(), pageable);
+
+        List<StoreResponse> responses = storesPage.getContent().stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return new PaginatedResponse<>(responses, storesPage.getTotalElements(), page, perPage);
+    }
+
+
+    public List<StoreResponse> getStoresByOwnerId(Long ownerId, Long viewerId) {
+    List<Store> stores = storeRepository.findByOwner_Id(ownerId);
     return stores.stream()
-            .map(this::mapToResponse)
+            .map(s -> mapToResponse(s, viewerId))
             .toList();
 }
-
-
-    private StoreResponse mapToResponse(Store store) {
+    private StoreResponse mapToResponse(Store store, Long viewerId) {
         List<StoreReview> reviews = storeReviewRepository.findByStore_Id(store.getId());
         double averageRating = reviews.stream()
                 .mapToInt(StoreReview::getRating)
                 .average()
                 .orElse(0.0);
+
+        long totalProducts = productRepository.countByStoreId(store.getId());
+
+        Boolean favorited = null;
+        if (viewerId != null) {
+            favorited = favoriteRepository.existsByUserIdAndStore_Id(viewerId, store.getId());
+        }
 
         return StoreResponse.builder()
                 .id(store.getId())
@@ -144,7 +195,13 @@ public class StoreService {
                 .ownerName(store.getOwner().getName())
                 .averageRating(averageRating)
                 .totalReviews(reviews.size())
+                .totalProducts(totalProducts)
+                .favorited(favorited)
                 .build();
+    }
+
+    private StoreResponse mapToResponse(Store store) {
+        return mapToResponse(store, null);
     }
 
     public void deleteStore(Long storeId, String userEmail) {
@@ -167,7 +224,5 @@ public class StoreService {
                 .map(this::mapToResponse)
                 .toList();
     }
-
-
 
 }

@@ -1,6 +1,8 @@
 package geekcode.takatuf.Controller;
 
 import geekcode.takatuf.Service.SectionService;
+import geekcode.takatuf.dto.PaginatedResponse;
+import geekcode.takatuf.dto.section.SectionItemSortRequest;
 import geekcode.takatuf.dto.section.SectionRequest;
 import geekcode.takatuf.dto.section.SectionResponse;
 import geekcode.takatuf.dto.section.SectionSortRequest;
@@ -19,22 +21,28 @@ public class SectionController {
 
     private final SectionService sectionService;
 
-    @PostMapping("/add")
-    public ResponseEntity<SectionResponse> createSection(@AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SectionRequest request) {
+    @PostMapping(value = "/add", consumes = "multipart/form-data")
+    public ResponseEntity<SectionResponse> createSection(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @ModelAttribute SectionRequest request) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
+
         return ResponseEntity.ok(sectionService.createSection(userDetails.getUsername(), request));
     }
 
-    @PostMapping("/update/{id}")
-    public ResponseEntity<SectionResponse> updateSection(@PathVariable Long id,
+    @PostMapping(value = "/update/{id}", consumes = "multipart/form-data")
+    public ResponseEntity<SectionResponse> updateSection(
+            @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SectionRequest request) {
+            @ModelAttribute SectionRequest request) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
+
         return ResponseEntity.ok(sectionService.updateSection(id, userDetails.getUsername(), request));
     }
 
@@ -43,28 +51,64 @@ public class SectionController {
         return ResponseEntity.ok(sectionService.getSectionById(id));
     }
 
+    @GetMapping("/paginated")
+    public ResponseEntity<PaginatedResponse<SectionResponse>> getPaginatedSections(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(name = "per_page", defaultValue = "10") int perPage,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "ASC") String sortDir,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null)
+            return ResponseEntity.status(401).build();
+
+        PaginatedResponse<SectionResponse> response = sectionService.getAllSectionsPaginated(
+                page, perPage, q, sort, sortDir);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/all")
     public ResponseEntity<List<SectionResponse>> getAllSections() {
-        return ResponseEntity.ok(sectionService.getAllSections());
+        List<SectionResponse> sections = sectionService.getAllSections();
+        return ResponseEntity.ok(sections);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteSection(@PathVariable Long id,
+    public ResponseEntity<Void> deleteSection(
+            @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
+
         sectionService.deleteSection(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/sort")
-    public ResponseEntity<Void> sortSections(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<Void> sortSections(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody List<SectionSortRequest> sortRequests) {
+
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
+
         sectionService.sortSections(userDetails.getUsername(), sortRequests);
         return ResponseEntity.ok().build();
     }
+
+@PostMapping("/{sectionId}/items/sort")
+public ResponseEntity<Void> sortSectionItems(
+        @PathVariable Long sectionId,
+        @RequestBody List<SectionItemSortRequest> sortRequests,
+        @AuthenticationPrincipal UserDetails userDetails) {
+
+    if (userDetails == null) return ResponseEntity.status(401).build();
+
+    sectionService.sortSectionItems(sectionId, sortRequests);
+    return ResponseEntity.ok().build();
+}
 }

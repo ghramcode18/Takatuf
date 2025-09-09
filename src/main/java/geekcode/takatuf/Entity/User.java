@@ -88,6 +88,10 @@ public class User {
     @OneToMany(mappedBy = "user")
     @JsonIgnore
     private List<ProductReview> productReviews;
+    
+    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<SellerCategory> sellerCategories;
 
     // One-to-Many with SellerReviews
     @OneToMany(mappedBy = "reviewer")
@@ -103,9 +107,13 @@ public class User {
     private List<Store> stores;
 
     // One-to-Many with Complaints
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "submittedBy")
     @JsonIgnore
     private List<Complaint> complaints;
+
+    @OneToMany(mappedBy = "reviewedBy")
+    @JsonIgnore
+    private List<Complaint> reviewedComplaints;
 
     // One-to-Many with Notifications0
     @OneToMany(mappedBy = "user")

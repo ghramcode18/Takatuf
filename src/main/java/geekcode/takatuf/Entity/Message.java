@@ -28,6 +28,21 @@ public class Message {
     private User sender;
     
     @ManyToOne
-    @JoinColumn(name = "receiver_id", insertable = false, updatable = false)
+    @JoinColumn(name = "receiver_id")
     private User receiver;
+
+    @ManyToOne
+    @JoinColumn(name = "chat_id")
+    private Chat chat;
+
+    @Column(name = "is_deleted")
+    private boolean deleted = false;
+
+    @Column(name = "is_edited")
+    private boolean edited = false;
+
+    private LocalDateTime editedAt;
+
+    private LocalDateTime deletedAt;
+
 }

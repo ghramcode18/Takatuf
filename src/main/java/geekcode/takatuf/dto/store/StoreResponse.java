@@ -1,7 +1,5 @@
 package geekcode.takatuf.dto.store;
 
-
-
 import lombok.*;
 
 @Getter
@@ -22,4 +20,6 @@ public class StoreResponse {
 
     private Double averageRating;
     private Integer totalReviews;
+    private long totalProducts;
+    private Boolean favorited; 
 }

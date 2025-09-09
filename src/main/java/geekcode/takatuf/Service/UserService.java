@@ -1,5 +1,6 @@
 package geekcode.takatuf.Service;
 
+import geekcode.takatuf.Enums.UserType;
 import geekcode.takatuf.dto.user.UpdateUserRequest;
 import geekcode.takatuf.dto.user.UserResponse;
 import geekcode.takatuf.Entity.User;
@@ -9,12 +10,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.util.UUID;
 import java.nio.file.Path;
 import java.io.IOException;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
@@ -27,10 +34,19 @@ public class UserService {
 
     public String storeProfileImage(MultipartFile imageFile) throws IOException {
         String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
-        Path path = Paths.get("uploads/user/images/" + fileName);
-        Files.createDirectories(path.getParent());
-        Files.write(path, imageFile.getBytes());
-        return "/uploads/user/images/" + fileName;
+        Path uploadPath = Paths.get("uploads/users/images/");
+
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        Path filePath = uploadPath.resolve(fileName);
+        Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/uploads/users/images/")
+                .path(fileName)
+                .toUriString();
     }
 
     public UserResponse updateUser(Long userId, UpdateUserRequest updateRequest) {
@@ -95,7 +111,6 @@ public class UserService {
                 .getId();
     }
 
-
     public User findUserId(Long id) {
         User user = userRepository.findById(id).get();
         return user;
@@ -106,5 +121,12 @@ public class UserService {
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
         return convertToUserResponse(user);
+    }
+
+
+    public List<User> findAllExcept(Long currentUserId) {
+        return userRepository.findAll().stream()
+                .filter(user -> !user.getId().equals(currentUserId) && user.getType() == UserType.BUYER)
+                .collect(Collectors.toList());
     }
 }

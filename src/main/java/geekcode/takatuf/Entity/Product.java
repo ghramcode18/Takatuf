@@ -3,10 +3,12 @@ package geekcode.takatuf.Entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
+
 import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import geekcode.takatuf.Enums.ProductCategory;
 
 @Entity
 @Table(name = "products")
@@ -24,17 +26,27 @@ public class Product {
     private Long id;
 
     private String name;
+
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String description;
+
     private BigDecimal price;
     private String image;
 
     private Integer quantity;
 
-    @Enumerated(EnumType.STRING)
-    private ProductCategory category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
+
+    @Column(name = "group_discount_percentage")
+    private BigDecimal groupDiscountPercentage;
 
     @OneToMany(mappedBy = "product")
     private List<ProductReview> productReviews;
